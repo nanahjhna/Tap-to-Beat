@@ -1,0 +1,273 @@
+네. **딱 이것만 기억하시면 됩니다.**
+
+### 🖥️ PowerShell
+
+프로젝트 이동:
+
+```powershell
+cd "C:\Users\nanah\StudioProjects\Tap-To-Beat"
+```
+
+Antigravity 실행:
+
+```powershell
+& "$env:LOCALAPPDATA\agy\bin\agy.exe"
+```
+
+### 🤖 Antigravity 안에서
+
+사용량 확인:
+
+```text
+/usage
+```
+
+도움말:
+
+```text
+/help
+```
+
+변경 내용 확인:
+
+```text
+/diff
+```
+
+모델 변경:
+
+```text
+/model
+```
+
+새 작업:
+
+```text
+/clear
+```
+
+### 🛠️ Flutter
+
+```text
+flutter analyze
+```
+
+→ 오류 검사
+
+```text
+flutter run
+```
+
+→ 앱 실행
+
+```text
+flutter pub get
+```
+
+→ 패키지 설치
+
+### ⭐ 제일 중요한 사용법
+
+Antigravity에서는 그냥 이렇게 말하면 됩니다.
+
+```text
+현재 프로젝트 분석해줘.
+```
+
+```text
+이 기능 만들어줘.
+```
+
+```text
+오류 찾아서 고쳐줘.
+```
+
+```text
+수정 후 flutter analyze 해줘.
+```
+
+**즉, PowerShell 명령은 `cd / agy`, 나머지 작업은 대부분 Antigravity에게 말로 시키면 됩니다.**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ──────
+   📊 TapToBeat (바치키) 프로젝트 종합 분석 보고서
+  ──────                                                                                                                                                                                                                  
+  ### 1. Flutter 프로젝트 전체 구조                                                                                                                                                                                       
+                                                                                                                                                                                                                          
+  본 프로젝트는 간단한 탭 액션과 스테이지 클리어 방식의 RPG / 보스 레이드 게임 프로토타입입니다.                                                                                                                          
+                                                                                                                                                                                                                          
+    TapToBeat/
+    ├── assets/                                                                                                                                                                                                           
+    │   ├── icon/ (앱 아이콘: icon.png)                                                                                                                                                                                   
+    │   ├── images/ (비어 있음)                                                                                                                                                                                           
+    │   └── sounds/ (효과음: clear.mp3, start.mp3)                                                                                                                                                                        
+    ├── lib/                                                                                                                                                                                                              
+    │   ├── main.dart (앱 진입점, 테마 설정, 라우트 매핑, SDK 초기화)                                                                                                                                                     
+    │   ├── models/                                                                                                                                                                                                       
+    │   │   ├── stage_model.dart (스테이지 데이터 모델)                                                                                                                                                                   
+    │   │   └── stage_model (확장자 없는 중복 파일)                                                                                                                                                                       
+    │   ├── services/                                                                                                                                                                                                     
+    │   │   ├── stage_generator.dart (스테이지 무한 생성 및 밸런스 공식)                                                                                                                                                  
+    │   │   └── user_session.dart (로컬 로그인 세션 관리)                                                                                                                                                                 
+    │   ├── utils/                                                                                                                                                                                                        
+    │   │   └── app_texts.dart (한국어/영어/일본어 다국어 및 시간 포맷터)                                                                                                                                                 
+    │   ├── widgets/                                                                                                                                                                                                      
+    │   │   ├── ad_banner_widget.dart (구글 애드몹 배너 위젯)                                                                                                                                                             
+    │   │   ├── game_bottom_navigation.dart (공통 하단 5개 탭 메뉴)                                                                                                                                                       
+    │   │   └── game_header.dart (공통 상단 앱바 & 언어 변경 다이얼로그)                                                                                                                                                  
+    │   └── screens/ (총 18개 화면 파일)                                                                                                                                                                                  
+    ├── android/ (Gradle kts, AdMob App ID 적용 완료)                                                                                                                                                                     
+    ├── ios/ (Info.plist 기본 구성)                                                                                                                                                                                       
+    └── pubspec.yaml (의존성 및 에셋 설정)                                                                                                                                                                                
+  ──────                                                                                                                                                                                                                  
+  ### 2. 주요 Dart 파일과 각각의 역할                                                                                                                                                                                     
+                                                                                                                                                                                                                          
+   파일 경로                                                    │ 핵심 클래스/역할                                             │ 설명
+  ──────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────
+   main.dart                                                    │ main.dart:33-79                                              │ 앱 진입점(main), 다크 테마(보라색 톤) 설정, AdMob 초기화 및 전체 14개 Named Route 등록
+   stage_model.dart                                             │ stage_model.dart:1-17                                        │ 스테이지 번호, 보스명, 이미지 경로, 권장 전투력, 코인 보상, 해금 여부 데이터 모델
+   stage_generator.dart                                         │ stage_generator.dart:3-26                                    │ 스테이지 번호에 따라 5종 보스명 순환, 전투력/보상 수치 및 해금 조건을 자동 계산하여 반환
+   user_session.dart                                            │ user_session.dart:3-14                                       │ SharedPreferences 기반으로 로그인 프로바이더(Google/Apple/Guest) 저장 및 로그아웃 처리
+   app_texts.dart                                               │ app_texts.dart:4-228                                         │ 다국어(한국어, 영어, 일본어) 맵 및 ValueNotifier를 통한 전역 언어 변경 이벤트 전달
+   ad_banner_widget.dart                                        │ ad_banner_widget.dart:5-61                                   │ Google AdMob 배너 광고 로드 및 렌더링 위젯
+   game_bottom_navigation.dart                                  │ game_bottom_navigation.dart:4-33                             │ 메인 5개 탭(로비, 인벤토리, 상점, 캐릭터, 설정) 공통 하단 네비게이션
+   game_header.dart                                             │ game_header.dart:4-27                                        │ 언어 변경 팝업 버튼이 포함된 공통 앱바
+   main_screen.dart                                             │ main_screen.dart:11-95                                       │ 5개의 메인 탭 화면을 IndexedStack으로 전환/유지하는 컨테이너
+   game_play_view.dart                                          │ game_play_view.dart:6-57                                     │ 실제 보스 전투 루프(타이머, HP 바, 공격 연타 버튼, 일시정지)
+   stage_select_view.dart                                       │ stage_select_view.dart:8-88                                  │ 가상 무한 스크롤(999,999개) 기반 스테이지 선택 및 권장 전투력/보상 표시
+  ──────                                                                                                                                                                                                                  
+  ### 3. 현재 화면 구성 및 네비게이션 흐름                                                                                                                                                                                
+                                                                                                                                                                                                                          
+    graph TD                                                                                                                                                                                                              
+        A[LoadingView] -->|0.9초 후| B[TitleView]                                                                                                                                                                         
+        B -->|로그인 세션 없음| C[LoginView]                                                                                                                                                                              
+        B -->|로그인 세션 있음| D[MainScreen]                                                                                                                                                                             
+        C -->|로그인 성공| D                                                                                                                                                                                              
+                                                                                                                                                                                                                          
+        subgraph "MainScreen (IndexedStack 5개 탭)"                                                                                                                                                                       
+            D --> T0[LobbyTab]                                                                                                                                                                                            
+            D --> T1[InventoryView]                                                                                                                                                                                       
+            D --> T2[ShopView]                                                                                                                                                                                            
+            D --> T3[CharacterView]                                                                                                                                                                                       
+            D --> T4[SettingsView]                                                                                                                                                                                        
+        end                                                                                                                                                                                                               
+                                                                                                                                                                                                                          
+        T0 -->|스테이지 전투 버튼| S[StageSelectView]                                                                                                                                                                     
+        T0 -->|바로가기 아이콘| Q[QuestView]                                                                                                                                                                              
+        T0 -->|바로가기 아이콘| N[NoticeView]                                                                                                                                                                             
+                                                                                                                                                                                                                          
+        S -->|스테이지 선택| G[GamePlayView]                                                                                                                                                                              
+        G -->|일시정지 버튼| P[PauseOverlay]                                                                                                                                                                              
+        G -->|승리/패배/타임아웃| R[ResultView]                                                                                                                                                                           
+        R -->|재도전| G                                                                                                                                                                                                   
+        R -->|로비로| D                                                                                                                                                                                                   
+                                                                                                                                                                                                                          
+        T4 -->|계정 연동 탭| AL[AccountLinkView]                                                                                                                                                                          
+                                                                                                                                                                                                                          
+  1. 시작/인증 단계: LoadingView ➔ TitleView (TAP TO START) ➔ LoginView (Google / Apple / Guest) ➔ MainScreen                                                                                                             
+  2. 로비 및 메인 탭: IndexedStack을 통해 화면 전환 시 상태가 초기화되지 않음.                                                                                                                                            
+  3. 전투 루프: LobbyTab ➔ StageSelectView ➔ GamePlayView ➔ ResultView ➔ 로비 복귀 또는 재도전.                                                                                                                           
+  4. 부가 화면: 일일 퀘스트/업적(QuestView), 공지/출석(NoticeView), 계정 연동(AccountLinkView).                                                                                                                           
+  ──────                                                                                                                                                                                                                  
+  ### 4. 핵심 게임 로직                                                                                                                                                                                                   
+                                                                                                                                                                                                                          
+  1. 스테이지 자동 생성 및 밸런스 공식 (stage_generator.dart:12-26):                                                                                                                                                      
+      • 권장 전투력: Power = 100 + (150 × n) + (10 × n²)                                                                                                                                                                  
+      • 클리어 보상: Reward = 50 + (40 × n)  코인                                                                                                                                                                         
+      • 보스 명칭: Forest Guardian, Goblin King, Shadow Assassin, Flame Dragon, Void Behemoth 5종 순환 매핑                                                                                                               
+      • 해금 조건: stageNum <= currentMaxStage + 1 (현재 하드코딩 기준 최고 스테이지 5까지 해금)                                                                                                                          
+  2. 전투 진행 및 승패 판정 (game_play_view.dart:12-25):                                                                                                                                                                  
+      • 제한 시간: 30초 (1초마다 _timeLeft--)                                                                                                                                                                             
+      • 보스 HP: 100                                                                                                                                                                                                      
+      • 공격 방식: 공격 버튼을 탭할 때마다 HP가 10씩 감소 (총 10회 연타 시 격파)                                                                                                                                          
+      • 승리: 시간 내에 HP를 0으로 만들면 승리 (_finish(true))                                                                                                                                                            
+      • 패배: 30초가 경과할 때까지 처치하지 못하면 패배 (_finish(false))                                                                                                                                                  
+      • 일시정지: pause_overlay.dart를 다이얼로그로 띄우고 타이머를 중단/재개                                                                                                                                             
+                                                                                                                                                                                                                          
+  ──────                                                                                                                                                                                                                  
+  ### 5. 상태 관리 방식                                                                                                                                                                                                   
+                                                                                                                                                                                                                          
+  • 경량 로컬 영구 저장 (SharedPreferences):                                                                                                                                                                              
+      • user_session.dart: 로그인 제공자(login_provider) 유지.                                                                                                                                                            
+      • app_texts.dart: 선택된 언어(selected_language) 유지.                                                                                                                                                              
+  • 반응형 이벤트 전파 (ValueNotifier & ValueListenableBuilder):                                                                                                                                                          
+      • AppTexts.languageNotifier를 통해 언어 변경 시 MainScreen의 KeyedSubtree가 즉시 갱신되어 전 화면의 문구가 리로드됨.                                                                                                
+  • 화면별 로컬 상태 관리 (StatefulWidget / setState):                                                                                                                                                                    
+      • GamePlayView: HP, 타이머 카운트다운.                                                                                                                                                                              
+      • InventoryView: 카테고리 탭, 선택된 아이템 번호, 착용 중인 아이템 Set(_equipped).                                                                                                                                  
+      • QuestView: 보상 수령 여부 Set(claimed).                                                                                                                                                                           
+      • MainScreen: 현재 하단 탭 인덱스(_currentIndex).                                                                                                                                                                   
+  • (참고: Provider, Riverpod, Bloc, GetX 등의 전역 상태관리 라이브러리는 사용하지 않고 순수 Flutter 기능만 사용 중)                                                                                                      
+  ──────                                                                                                                                                                                                                  
+  ### 6. Assets 구조                                                                                                                                                                                                      
+                                                                                                                                                                                                                          
+  • pubspec.yaml 등록:                                                                                                                                                                                                    
+      • assets/images/                                                                                                                                                                                                    
+      • assets/sounds/                                                                                                                                                                                                    
+  • 실제 존재하는 파일:                                                                                                                                                                                                   
+      • assets/icon/icon.png (앱 아이콘)                                                                                                                                                                                  
+      • assets/sounds/clear.mp3 (클리어 효과음)                                                                                                                                                                           
+      • assets/sounds/start.mp3 (시작 효과음)                                                                                                                                                                             
+  • 비어 있는 폴더:                                                                                                                                                                                                       
+      • assets/images/ 폴더 내에 아무런 이미지 파일이 없음.                                                                                                                                                               
+                                                                                                                                                                                                                          
+  ──────                                                                                                                                                                                                                  
+  ### 7. pubspec.yaml의 주요 패키지                                                                                                                                                                                       
+                                                                                                                                                                                                                          
+   패키지명                                                            │ 버전                                                               │ 용도 및 현재 상태
+  ─────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────
+   google_mobile_ads                                                   │ ^9.1.0                                                             │ 구글 애드몹 광고 SDK (main.dart 초기화 및 AdBannerWidget에 사용 중)
+   shared_preferences                                                  │ ^2.5.5                                                             │ 로컬 Key-Value 저장소 (로그인 세션, 언어 설정 저장)
+   audioplayers                                                        │ ^6.0.0                                                             │ 오디오 재생 SDK (패키지는 등록되었으나 코드에서 import 및 재생 로직 미구현)
+   url_launcher                                                        │ ^6.3.2                                                             │ 외부 URL 열기 (현재 코드에서 미사용)
+   in_app_update                                                       │ ^5.0.0                                                             │ 안드로이드 인앱 업데이트 (현재 코드에서 미사용)
+   package_info_plus                                                   │ ^10.2.1                                                            │ 앱 버전/빌드 번호 조회 (현재 코드에서 미사용, UI에 v1.0.0 하드코딩됨)
+   cupertino_icons                                                     │ ^1.0.8                                                             │ iOS 스타일 기본 아이콘
+   flutter_lints                                                       │ ^6.0.0                                                             │ 코드 린트 규칙 검사
+   flutter_launcher_icons                                              │ ^0.14.4                                                            │ 앱 아이콘 자동 생성 툴
+  ──────                                                                                                                                                                                                                  
+  ### 8. 현재 발견되는 오류 및 잠재적인 문제                                                                                                                                                                              
+                                                                                                                                                                                                                          
+  1. Dart 정적 분석(Lint) 경고 11건 발생:                                                                                                                                                                                 
+      • 중복 키 에러: app_texts.dart:60의 _texts 맵 내부에서 'settings' 키가 중복 선언됨 (equal_keys_in_map 경고 3건).                                                                                                    
+      • 미사용 메서드: main_screen.dart:25의 _showLanguageDialog()가 선언만 되고 호출되지 않음 (GameHeader 내부 다이얼로그와 중복).                                                                                       
+      • 패키지 네이밍 규칙: pubspec.yaml의 name: TapToBeat가 소문자_밑줄 규칙(TapToBeat)을 위반함.
+      • 테스트 미사용 import: widget_test.dart:1의 material.dart 미사용.                                                                                                                                                  
+  2. UI 및 비즈니스 로직 결함:                                                                                                                                                                                            
+      • 인벤토리 하단 바 인덱스 불일치: inventory_view.dart:32에서 단독 화면으로 진입할 때 currentIndex: 2(상점)로 지정되어 있어 탭 표시 오류 발생 (인벤토리는 인덱스 1).                                                 
+      • 아이템 착용 토스트 문구 반전: inventory_view.dart:36의 _action()에서 장착 Set을 먼저 토글한 후 상태를 다시 검사하여 "아이템을 착용/해제했습니다" 토스트 메시지가 반대로 출력됨.                                   
+  3. 불필요/미완성 더미 파일:                                                                                                                                                                                             
+      • lib/models/stage_model : 확장자가 없는 동일 내용의 중복 파일 존재.                                                                                                                                                
+      • lib/screens/achievement_view.dart, lib/screens/event_popup.dart : 0바이트 빈 파일 상태로 방치됨.                                                                                                                  
+  4. 미연결된 리소스:                                                                                                                                                                                                     
+      • stage_generator.dart:21에서 'assets/images/boss_placeholder.png'를 지정하고 있으나 실제 해당 이미지가 없음.                                                                                                       
+      • 효과음 파일(clear.mp3, start.mp3) 및 audioplayers 패키지가 있지만 재생 코드가 연결되어 있지 않음.                                                                                                                 
+                                                                                                                                                                                                                          
+  ──────                                                                                                                                                                                                                  
+  ### 9. 실행할 때 문제가 생길 가능성이 있는 부분 (Critical)                                                                                                                                                              
+                                                                                                                                                                                                                          
+  │ Warning                                                                                                                                                                                           
+  │ 1. iOS 기기/시뮬레이터 실행 시 즉시 크래시 위험 (AdMob 설정 누락)                                                                                                                                                     
+  │ main.dart에서 MobileAds.instance.initialize()를 호출하고 있으나, Info.plist에 AdMob App ID(GADApplicationIdentifier)가 등록되어 있지 않습니다. 이 상태로 iOS 빌드 및 실행 시 시작과 동시에 **네이티브                 
+  │ 크래시(SIGABRT)**가 발생합니다.                                                                                                                                                                                       
+                                                                                                                                                                                                                          
+  │ Caution                                                                                                                                                                                           
+  │ 2. 실제 AdMob 광고 단위 ID 하드코딩                                                                                                                                                                                   
+  │ ad_banner_widget.dart:17 및 AndroidManifest.xml:14에 실제 구글 계정의 라이브 AdMob ID가 포함되어 있습니다. 테스트 기기 등록 없이 디버깅을 계속하면 구글 정책 위반(무효 트래픽)으로 계정이 제재될 수 있으므로 주의가   
+  │ 필요합니다.                                                                                                                                                                                                           
+                                                                                                                                                                                                                          
+  │ Note                                                                                                                                                                                           
+  │ 3. 로그인 연동 SDK 부재                                                                                                                                                                                               
+  │ 현재 소셜 로그인(Google, Apple)은 UI와 로컬 플래그 저장만 구현되어 있으며, 실제 인증 SDK(google_sign_in, sign_in_with_apple, firebase_auth 등)는 아직 연동되어 있지 않은 목업(Mock) 상태입니다.     

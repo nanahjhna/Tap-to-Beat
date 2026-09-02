@@ -1,0 +1,46 @@
+TapToBeat: Mikoshi Mayhem 리듬게임 화면 구성 및 기능 안내
+======================================================
+
+1. 파일 구성 트리
+
+lib/
+├─ main.dart                         앱 시작, 테마, 전체 라우트 등록
+├─ models/
+│  └─ stage_model.dart               리듬 트랙 데이터 모델 (BPM, 난이도, 음원 경로, 노트 수)
+├─ services/
+│  ├─ stage_generator.dart           Mikoshi Mayhem 등 리듬 트랙 목록 자동 생성
+│  └─ user_session.dart              로그인 방식 기기 저장/조회/로그아웃
+├─ utils/
+│  └─ app_texts.dart                 리듬게임 맞춤 한국어/영어/일본어 번역 사전
+├─ widgets/
+│  ├─ ad_banner_widget.dart          배너 광고 표시 영역
+│  ├─ game_bottom_navigation.dart    공통 하단 메뉴
+│  └─ game_header.dart               공통 상단 헤더
+└─ screens/
+   ├─ loading_view.dart              시작 로딩 후 타이틀 자동 이동
+   ├─ title_view.dart                네온 비트 타이틀, 로그인/시작 진입
+   ├─ login_view.dart                Google/Apple/게스트 로그인 방식 선택
+   ├─ account_link_view.dart         계정 연동 관리 화면
+   ├─ main_screen.dart               로비/인벤토리/상점/캐릭터/설정의 탭 컨테이너
+   ├─ lobby_tab.dart                 추천 곡 배너 (Mikoshi Mayhem), 빠른 시작, 리듬 통계
+   ├─ stage_select_view.dart         곡 선택 (Track Select) 앨범 자켓, BPM, 난이도 뱃지
+   ├─ game_play_view.dart            4키(D, F, J, K / 터치) 리듬 플레이, 판정선, 콤보, 라이프, 오디오 싱크
+   ├─ pause_overlay.dart             일시정지, 재개, 설정, 로비 포기 메뉴
+   ├─ result_view.dart               STAGE CLEAR/FAILED, S/A/B/C/F 랭크, 점수, 판정별(PERFECT/GOOD/BAD/MISS) 집계
+   ├─ character_view.dart            DJ 비트 마스터 프로필, 리듬 스탯, 타이밍 가드/피버 부스트 스킬
+   ├─ inventory_view.dart            노트 스킨(네온/마츠리/사이버/사쿠라/8Bit) 및 타격 이펙트 커스텀
+   ├─ shop_view.dart                 Mikoshi Mayhem 사운드 팩, 비트 코인, 에너지, 광고 제거
+   ├─ quest_view.dart                일일 미션(풀콤보/퍼펙트 횟수 등) 및 업적
+   ├─ notice_view.dart               공지사항 및 7일 출석 보상
+   └─ settings_view.dart             BGM/SFX 볼륨, 판정 타이밍 싱크 오프셋(-100ms~+100ms), 계정 연동
+
+2. 4키 리듬게임 플레이 핵심 사양 (GamePlayView)
+
+- 입력 방식: 키보드 D, F, J, K 및 모바일 하단 4버튼 터치 / 트랙 탭 지원
+- 판정 시스템:
+  * PERFECT (±65ms, +300점, 체력 +3)
+  * GOOD (±125ms, +100점, 체력 +1)
+  * BAD (±200ms, +50점, 체력 -3, 콤보 리셋)
+  * MISS (노트 놓침, 체력 -7, 콤보 리셋)
+- 음원 재생: Mikoshi_Mayhem.mp3 오디오 동기화 및 Stopwatch 정밀 폴백
+- 게임오버 / 클리어 시 상세 분석(Rank, Accuracy %, Max Combo, 판정별 개수) 결과창 연동
