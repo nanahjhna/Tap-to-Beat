@@ -75,22 +75,34 @@ class LobbyTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 상단 재화 및 언어 선택
+              // 상단 재화 (에너지 제거) 및 정렬된 우측 메뉴 (지구본, 번개, 공지)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  const _Currency(icon: Icons.monetization_on_rounded, value: '1,250'),
                   Row(
-                    children: const [
-                      _Currency(icon: Icons.monetization_on_rounded, value: '1,250'),
-                      SizedBox(width: 8),
-                      _Currency(icon: Icons.bolt_rounded, value: '12'),
+                    children: [
+                      _miniShortcut(
+                        context,
+                        Icons.language,
+                        AppTexts.get('language'),
+                        onTap: () => _showLanguageDialog(context),
+                      ),
+                      const SizedBox(width: 8),
+                      _miniShortcut(
+                        context,
+                        Icons.bolt,
+                        AppTexts.get('quest'),
+                        route: '/quest',
+                      ),
+                      const SizedBox(width: 8),
+                      _miniShortcut(
+                        context,
+                        Icons.campaign,
+                        AppTexts.get('notice'),
+                        route: '/notice',
+                      ),
                     ],
-                  ),
-                  _miniShortcut(
-                    context,
-                    Icons.language,
-                    AppTexts.get('language'),
-                    onTap: () => _showLanguageDialog(context),
                   ),
                 ],
               ),
@@ -258,27 +270,6 @@ class LobbyTab extends StatelessWidget {
           ),
         ),
       ),
-      Positioned(
-        top: 80,
-        right: 16,
-        child: Column(
-          children: [
-            _miniShortcut(
-              context,
-              Icons.bolt,
-              AppTexts.get('quest'),
-              route: '/quest',
-            ),
-            const SizedBox(height: 12),
-            _miniShortcut(
-              context,
-              Icons.campaign,
-              AppTexts.get('notice'),
-              route: '/notice',
-            ),
-          ],
-        ),
-      ),
     ],
   );
 }
@@ -301,12 +292,12 @@ class _LobbyStat extends StatelessWidget {
 }
 
 Widget _miniShortcut(
-  BuildContext context,
-  IconData icon,
-  String label, {
-  String? route,
-  VoidCallback? onTap,
-}) => Tooltip(
+    BuildContext context,
+    IconData icon,
+    String label, {
+      String? route,
+      VoidCallback? onTap,
+    }) => Tooltip(
   message: label,
   child: Material(
     color: const Color(0xFF2D2855),
@@ -316,7 +307,7 @@ Widget _miniShortcut(
       onTap: onTap ?? (route != null ? () => Navigator.pushNamed(context, route) : null),
       child: Padding(
         padding: const EdgeInsets.all(11),
-        child: Icon(icon, color: const Color(0xFFFFD166)),
+        child: Icon(icon, color: const Color(0xFFFFD166), size: 20),
       ),
     ),
   ),

@@ -13,9 +13,6 @@ class StageSelectView extends StatefulWidget {
 }
 
 class _StageSelectViewState extends State<StageSelectView> {
-  final int _userMaxStage = 5;
-  final int _virtualInfiniteCount = 50;
-
   Color _getDifficultyColor(String diff) {
     switch (diff.toUpperCase()) {
       case 'EASY':
@@ -46,15 +43,17 @@ class _StageSelectViewState extends State<StageSelectView> {
 
   @override
   Widget build(BuildContext context) {
+    // StageGenerator에 등록된 모든 곡 리스트를 불러옵니다[cite: 1].
+    final stages = StageGenerator.allStages;
+
     return Scaffold(
       backgroundColor: const Color(0xFF151329),
       appBar: const GameHeader(titleKey: 'selectStage'),
       body: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        itemCount: _virtualInfiniteCount,
+        itemCount: stages.length,
         itemBuilder: (context, index) {
-          final stageNum = index + 1;
-          final stageData = StageGenerator.generateStage(stageNum, _userMaxStage);
+          final stageData = stages[index];
 
           return _trackCard(context, stageData);
         },

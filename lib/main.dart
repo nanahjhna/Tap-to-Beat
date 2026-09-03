@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart'; // 📌 광고 패키지 추가
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'screens/title_view.dart';
 import 'screens/main_screen.dart';

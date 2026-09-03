@@ -1,3 +1,9 @@
+class NoteData {
+  final int timeMs;
+  final int lane;
+  NoteData({required this.timeMs, required this.lane});
+}
+
 class StageModel {
   final int stageNumber;
   final String title;
@@ -6,11 +12,13 @@ class StageModel {
   final String difficulty;
   final int difficultyLevel;
   final String audioPath;
-  final int noteCount;
-  final int rewardCoins;
+  final String jacketAsset;
+  final List<NoteData> notes;
+
+  // Extra UI states
   final bool isUnlocked;
-  final int highScore;
   final String rank;
+  final int rewardCoins;
 
   StageModel({
     required this.stageNumber,
@@ -20,15 +28,13 @@ class StageModel {
     required this.difficulty,
     required this.difficultyLevel,
     required this.audioPath,
-    required this.noteCount,
-    required this.rewardCoins,
-    required this.isUnlocked,
-    this.highScore = 0,
+    required this.jacketAsset,
+    required this.notes,
+    this.isUnlocked = true,
     this.rank = '-',
+    this.rewardCoins = 150,
   });
 
-  // 이전 코드와의 하위 호환성을 위한 게터들
-  String get bossName => title;
-  String get imagePath => 'assets/images/album_cover.png';
-  int get recommendedPower => bpm;
+  int get id => stageNumber;
+  int get noteCount => notes.length;
 }
