@@ -2,7 +2,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:provider/provider.dart';
 
+import 'providers/user_provider.dart';
 import 'screens/title_view.dart';
 import 'screens/main_screen.dart';
 import 'screens/shop_view.dart';
@@ -27,7 +29,15 @@ void main() async {
     await MobileAds.instance.initialize();
   }
 
-  runApp(const TapToBeatGameApp());
+  final userProvider = UserProvider();
+  await userProvider.init();
+
+  runApp(
+    ChangeNotifierProvider.value(
+      value: userProvider,
+      child: const TapToBeatGameApp(),
+    ),
+  );
 }
 
 class TapToBeatGameApp extends StatelessWidget {

@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:provider/provider.dart';
 import 'pause_overlay.dart';
 import '../services/stage_generator.dart';
 import '../models/stage_model.dart';
+import '../providers/user_provider.dart';
 import '../utils/app_texts.dart';
 
 class RhythmNote {
@@ -118,6 +120,12 @@ class _GamePlayViewState extends State<GamePlayView>
     _isPlaying = true;
     _isPaused = false;
     _gameEnded = false;
+
+    // 최근 플레이 곡 업데이트
+    if (mounted) {
+      final userProvider = context.read<UserProvider>();
+      await userProvider.setLastPlayedStage(_stageData?.stageNumber ?? 1);
+    }
 
     try {
       final soundPath = _stageData?.audioPath ?? 'sounds/Mikoshi_Mayhem.mp3';

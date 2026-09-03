@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
+import '../models/effect_model.dart';
+import '../services/stage_generator.dart';
 import '../widgets/game_bottom_navigation.dart';
 import '../widgets/game_header.dart';
 import '../utils/app_texts.dart';
@@ -12,55 +16,11 @@ class InventoryView extends StatefulWidget {
 }
 
 class _InventoryViewState extends State<InventoryView> {
-  int _category = 0;
-  int? _selected;
-  final _equipped = <int>{0, 2};
-
-  static const List<Map<String, dynamic>> _customItems = [
-    {
-      'name': 'Classic Neon Green',
-      'type': 1, // Note Skin
-      'color': Color(0xFF2ED573),
-      'desc': '프로토타입 오리지널 네온 그린 노트',
-    },
-    {
-      'name': 'Matsuri Gold Spark',
-      'type': 2, // Hit Effect
-      'color': Color(0xFFFFD166),
-      'desc': '축제 분위기의 황금색 타격 파티클',
-    },
-    {
-      'name': 'Cyber Wave Cyan',
-      'type': 1, // Note Skin
-      'color': Color(0xFF1E90FF),
-      'desc': '미래지향적 사이버 블루 노트 바',
-    },
-    {
-      'name': 'Sakura Pulse Pink',
-      'type': 1, // Note Skin
-      'color': Color(0xFFFF6B81),
-      'desc': '벚꽃 테마의 화사한 핑크 노트',
-    },
-    {
-      'name': 'Electric Thunder',
-      'type': 2, // Hit Effect
-      'color': Color(0xFFFFA502),
-      'desc': '콤보 폭발 시 전격 이펙트 발생',
-    },
-    {
-      'name': '8-Bit Retro Pixel',
-      'type': 1, // Note Skin
-      'color': Color(0xFF9B59B6),
-      'desc': '도트 그래픽 스타일의 아케이드 노트',
-    },
-  ];
+  int _category = 0; // 0: 전체, 1: 곡, 2: 이펙트
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _customItems.asMap().entries.where((entry) {
-      if (_category == 0) return true;
-      return entry.value['type'] == _category;
-    }).toList();
+    final userProvider = context.watch<UserProvider>();
 
     final content = SafeArea(
       top: widget.embedded,
@@ -71,44 +31,16 @@ class _InventoryViewState extends State<InventoryView> {
             child: SegmentedButton<int>(
               segments: [
                 ButtonSegment(value: 0, label: Text(AppTexts.get('all'))),
-                ButtonSegment(value: 1, label: Text(AppTexts.get('equipment'))), // 노트 스킨
-                ButtonSegment(value: 2, label: Text(AppTexts.get('consumable'))), // 타격 이펙트
+                ButtonSegment(value: 1, label: Text(AppTexts.get('songs'))),
+                ButtonSegment(value: 2, label: Text(AppTexts.get('effects'))),
               ],
               selected: {_category},
               onSelectionChanged: (v) => setState(() => _category = v.first),
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: filtered.length,
-              itemBuilder: (_, i) {
-                final originalIndex = filtered[i].key;
-                final itemData = filtered[i].value;
-                return _item(originalIndex, itemData);
-              },
-            ),
+            child: _buildItemList(userProvider),
           ),
-          if (_selected != null)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _action,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFD166),
-                    foregroundColor: Colors.black,
-                  ),
-                  child: Text(
-                    _equipped.contains(_selected)
-                        ? AppTexts.get('unequip')
-                        : AppTexts.get('useItem'),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );
@@ -118,75 +50,160 @@ class _InventoryViewState extends State<InventoryView> {
         : Scaffold(
             appBar: const GameHeader(titleKey: 'inventory'),
             body: content,
-            bottomNavigationBar: const GameBottomNavigation(currentIndex: 1),
+            bottomNavigationBar: const GameBottomNavigation(currentIndex: 3),
           );
   }
 
-  Widget _item(int index, Map<String, dynamic> data) {
-    final equipped = _equipped.contains(index);
-    final color = data['color'] as Color;
+  Widget _buildItemList(UserProvider userProvider) {
+    final items = <_InventoryItemData>[];
 
+    // 소유한 곡 추가
+    if (_category == 0 || _category == 1) {
+      for (final stage in StageGenerator.allStages) {
+        final itemId = 'stage_${stage.stageNumber}';
+        if (userProvider.ownsSong(itemId)) {
+          items.add(_InventoryItemData(
+            id: itemId,
+            name: stage.title,
+            desc: '${stage.artist} • BPM ${stage.bpm} • ${stage.difficulty}',
+            type: 'song',
+            color: const Color(0xFF1E90FF),
+            icon: Icons.music_note_rounded,
+            isEquipped: userProvider.isSongEquipped(itemId),
+          ));
+        }
+      }
+    }
+
+    // 소유한 이펙트 추가
+    if (_category == 0 || _category == 2) {
+      for (final effect in ShopData.effects) {
+        if (userProvider.ownsEffect(effect.id)) {
+          items.add(_InventoryItemData(
+            id: effect.id,
+            name: effect.name,
+            desc: effect.desc,
+            type: 'effect',
+            color: effect.color,
+            icon: effect.icon,
+            isEquipped: userProvider.isEffectEquipped(effect.id),
+          ));
+        }
+      }
+      for (final skin in ShopData.noteSkins) {
+        if (userProvider.ownsEffect(skin.id)) {
+          items.add(_InventoryItemData(
+            id: skin.id,
+            name: skin.name,
+            desc: skin.desc,
+            type: 'effect',
+            color: skin.color,
+            icon: skin.icon,
+            isEquipped: userProvider.isEffectEquipped(skin.id),
+          ));
+        }
+      }
+    }
+
+    if (items.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.inventory_2, color: Colors.white24, size: 64),
+            const SizedBox(height: 16),
+            Text(
+              AppTexts.get('noItems'),
+              style: const TextStyle(color: Colors.white54, fontSize: 16),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return _inventoryCard(userProvider, item);
+      },
+    );
+  }
+
+  Widget _inventoryCard(UserProvider userProvider, _InventoryItemData item) {
     return Card(
       color: const Color(0xFF221F42),
       margin: const EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
         side: BorderSide(
-          color: equipped ? color.withValues(alpha: 0.8) : Colors.white12,
-          width: equipped ? 1.5 : 1.0,
+          color: item.isEquipped
+              ? item.color.withValues(alpha: 0.8)
+              : Colors.white12,
+          width: item.isEquipped ? 1.5 : 1.0,
         ),
       ),
-      child: CheckboxListTile(
-        value: _selected == index,
-        onChanged: (_) => setState(() => _selected = _selected == index ? null : index),
-        secondary: Container(
-          width: 44,
-          height: 44,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          width: 48,
+          height: 48,
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: color, width: 1.5),
+            color: item.color.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: item.color, width: 1.5),
           ),
-          child: Icon(
-            data['type'] == 1 ? Icons.horizontal_rule_rounded : Icons.flare_rounded,
-            color: color,
-            size: 26,
-          ),
+          child: Icon(item.icon, color: item.color, size: 26),
         ),
         title: Text(
-          data['name'] as String,
+          item.name,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
         ),
         subtitle: Text(
-          equipped
-              ? '${AppTexts.get('equipped')} • ${data['desc']}'
-              : data['desc'] as String,
+          item.isEquipped
+              ? '${AppTexts.get('equipped')} • ${item.desc}'
+              : item.desc,
           style: TextStyle(
             fontSize: 12,
-            color: equipped ? const Color(0xFFFFD166) : Colors.white60,
+            color: item.isEquipped ? const Color(0xFFFFD166) : Colors.white60,
           ),
         ),
-        controlAffinity: ListTileControlAffinity.trailing,
-      ),
-    );
-  }
-
-  void _action() {
-    final item = _selected!;
-    final willEquip = !_equipped.contains(item);
-    setState(() {
-      if (willEquip) {
-        _equipped.add(item);
-      } else {
-        _equipped.remove(item);
-      }
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          willEquip ? AppTexts.get('itemEquipped') : AppTexts.get('itemUnequipped'),
+        trailing: Switch(
+          value: item.isEquipped,
+          onChanged: (value) {
+            if (item.type == 'song') {
+              userProvider.toggleEquipSong(item.id);
+            } else {
+              userProvider.toggleEquipEffect(item.id);
+            }
+          },
+          activeThumbColor: const Color(0xFFFFD166),
+          activeTrackColor: const Color(0xFFFFD166).withValues(alpha: 0.3),
+          inactiveThumbColor: Colors.white54,
+          inactiveTrackColor: Colors.white12,
         ),
       ),
     );
   }
+}
+
+class _InventoryItemData {
+  final String id;
+  final String name;
+  final String desc;
+  final String type;
+  final Color color;
+  final IconData icon;
+  final bool isEquipped;
+
+  const _InventoryItemData({
+    required this.id,
+    required this.name,
+    required this.desc,
+    required this.type,
+    required this.color,
+    required this.icon,
+    required this.isEquipped,
+  });
 }

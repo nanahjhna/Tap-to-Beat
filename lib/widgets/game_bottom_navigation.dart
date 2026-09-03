@@ -5,6 +5,9 @@ class GameBottomNavigation extends StatelessWidget {
   const GameBottomNavigation({super.key, this.currentIndex = 0, this.onTabSelected});
   final int currentIndex;
   final ValueChanged<int>? onTabSelected;
+
+  static const List<String> _routes = ['/main', '/character', '/shop', '/inventory', '/settings'];
+
   @override
   Widget build(BuildContext context) => BottomNavigationBar(
     currentIndex: currentIndex,
@@ -17,16 +20,15 @@ class GameBottomNavigation extends StatelessWidget {
         onTabSelected!(index);
         return;
       }
-      const routes = ['/main', '/inventory', '/shop', '/character', '/settings'];
       if (index == 0 || index != currentIndex) {
-        Navigator.pushNamedAndRemoveUntil(context, routes[index], (route) => false);
+        Navigator.pushNamedAndRemoveUntil(context, _routes[index], (route) => false);
       }
     },
     items: [
       BottomNavigationBarItem(icon: const Icon(Icons.home), label: AppTexts.get('lobby')),
-      BottomNavigationBarItem(icon: const Icon(Icons.inventory_2), label: AppTexts.get('inventory')),
-      BottomNavigationBarItem(icon: const Icon(Icons.shopping_bag), label: AppTexts.get('shop')),
       BottomNavigationBarItem(icon: const Icon(Icons.person), label: AppTexts.get('character')),
+      BottomNavigationBarItem(icon: const Icon(Icons.shopping_bag), label: AppTexts.get('shop')),
+      BottomNavigationBarItem(icon: const Icon(Icons.inventory_2), label: AppTexts.get('inventory')),
       BottomNavigationBarItem(icon: const Icon(Icons.settings), label: AppTexts.get('settings')),
     ],
   );

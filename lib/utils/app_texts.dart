@@ -87,7 +87,7 @@ class AppTexts {
       'maxCombo': 'MAX COMBO',
       'accuracy': '정확도',
       'rank': '랭크',
-      'nowPlaying': '추천 트랙',
+      'nowPlaying': '최근 플레이한 곡',
 
       // 커스터마이즈 & DJ 캐릭터
       'all': '전체',
@@ -115,14 +115,19 @@ class AppTexts {
       'vitality': '피버 부스트 (Fever Boost)',
 
       // 상점
-      'starterCoins': '비트 코인 스타터 팩',
-      'starterCoinsDesc': '500 비트 코인',
-      'energyPack': '리듬 에너지 팩',
-      'energyPackDesc': '10 에너지',
-      'removeAds': '광고 제거',
-      'removeAdsDesc': '영구 광고 제거 및 보너스 스킨',
-      'musicPack': 'Mikoshi Mayhem 사운드 팩',
-      'musicPackDesc': '신규 익스텐디드 트랙 3곡 해금',
+      'songs': '곡',
+      'effects': '이펙트',
+      'owned': '보유 중',
+      'buyWithAd': '코인 + 광고 시청으로 구매',
+      'buyWithCoin': '코인으로 구매',
+      'coinNotEnough': '코인이 부족합니다.',
+      'adFailed': '광고 시청에 실패했습니다.',
+      'adRewardGranted': '광고 시청 완료! 보상을 지급합니다.',
+      'confirmPurchase': '구매 확인',
+      'confirmPurchaseMsg': '이 아이템을 구매하시겠습니까?',
+      'yes': '예',
+      'no': '아니오',
+      'noItems': '보유한 아이템이 없습니다.',
 
       // 퀘스트 & 공지 / 출석
       'quest': '퀘스트',
@@ -212,7 +217,7 @@ class AppTexts {
       'maxCombo': 'MAX COMBO',
       'accuracy': 'Accuracy',
       'rank': 'Rank',
-      'nowPlaying': 'Featured Track',
+      'nowPlaying': 'Recently Played',
 
       // Customization & DJ Character
       'all': 'All',
@@ -240,14 +245,19 @@ class AppTexts {
       'vitality': 'Fever Boost',
 
       // Shop
-      'starterCoins': 'Beat Coins Starter Pack',
-      'starterCoinsDesc': '500 beat coins',
-      'energyPack': 'Rhythm Energy Pack',
-      'energyPackDesc': '10 energy',
-      'removeAds': 'Remove Ads',
-      'removeAdsDesc': 'Permanent ad removal & bonus skin',
-      'musicPack': 'Mikoshi Mayhem Track Pack',
-      'musicPackDesc': 'Unlock 3 Extended Tracks',
+      'songs': 'Songs',
+      'effects': 'Effects',
+      'owned': 'Owned',
+      'buyWithAd': 'Buy with Coins + Ad',
+      'buyWithCoin': 'Buy with Coins',
+      'coinNotEnough': 'Not enough coins.',
+      'adFailed': 'Failed to load ad.',
+      'adRewardGranted': 'Ad watched! Reward granted.',
+      'confirmPurchase': 'Confirm Purchase',
+      'confirmPurchaseMsg': 'Purchase this item?',
+      'yes': 'Yes',
+      'no': 'No',
+      'noItems': 'No items owned.',
 
       // Quest & Notice / Attendance
       'quest': 'Quest',
@@ -337,7 +347,7 @@ class AppTexts {
       'maxCombo': 'MAXコンボ',
       'accuracy': '正確度',
       'rank': 'ランク',
-      'nowPlaying': 'おすすめ楽曲',
+      'nowPlaying': '最近プレイした曲',
 
       // カスタマイズ & DJキャラクター
       'all': 'すべて',
@@ -365,14 +375,19 @@ class AppTexts {
       'vitality': 'フィーバーブースト (Fever Boost)',
 
       // ショップ
-      'starterCoins': 'ビートコインパック',
-      'starterCoinsDesc': '500ビートコイン',
-      'energyPack': 'リズムエネルギーパック',
-      'energyPackDesc': '10エネルギー',
-      'removeAds': '広告削除',
-      'removeAdsDesc': '広告を永久削除＆ボーナススキン',
-      'musicPack': 'Mikoshi Mayhem楽曲パック',
-      'musicPackDesc': '新規拡張トラック3曲解放',
+      'songs': '楽曲',
+      'effects': 'エフェクト',
+      'owned': '保有中',
+      'buyWithAd': 'コイン+広告で購入',
+      'buyWithCoin': 'コインで購入',
+      'coinNotEnough': 'コインが不足しています。',
+      'adFailed': '広告の読み込みに失敗しました。',
+      'adRewardGranted': '広告視聴完了！報酬を付与しました。',
+      'confirmPurchase': '購入確認',
+      'confirmPurchaseMsg': 'このアイテムを購入しますか？',
+      'yes': 'はい',
+      'no': 'いいえ',
+      'noItems': '保有アイテムがありません。',
 
       // クエスト & お知らせ / 出席
       'quest': 'クエスト',

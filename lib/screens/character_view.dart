@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 import '../utils/app_texts.dart';
 import '../widgets/game_bottom_navigation.dart';
 import '../widgets/game_header.dart';
@@ -15,6 +17,28 @@ class CharacterView extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
+            // 상단 코인 표시
+            Consumer<UserProvider>(
+              builder: (context, userProvider, child) => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.monetization_on_rounded, color: Color(0xFFFFD166), size: 18),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${userProvider.coins}',
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 10),
             // DJ 아바타 원형 비주얼
             Container(
@@ -151,7 +175,7 @@ class CharacterView extends StatelessWidget {
         : Scaffold(
             appBar: const GameHeader(titleKey: 'character'),
             body: content,
-            bottomNavigationBar: const GameBottomNavigation(currentIndex: 3),
+            bottomNavigationBar: const GameBottomNavigation(currentIndex: 1),
           );
   }
 

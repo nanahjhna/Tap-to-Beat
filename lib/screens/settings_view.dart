@@ -221,7 +221,7 @@ class _SettingsViewState extends State<SettingsView> {
         : Scaffold(
             appBar: const GameHeader(titleKey: 'settings'),
             body: content,
-            bottomNavigationBar: const GameBottomNavigation(currentIndex: 3),
+            bottomNavigationBar: const GameBottomNavigation(currentIndex: 4),
           );
   }
 }

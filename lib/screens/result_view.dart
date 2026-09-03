@@ -1,8 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
+import '../services/stage_generator.dart';
 import '../utils/app_texts.dart';
 
-class ResultView extends StatelessWidget {
+class ResultView extends StatefulWidget {
   const ResultView({super.key});
+
+  @override
+  State<ResultView> createState() => _ResultViewState();
+}
+
+class _ResultViewState extends State<ResultView> {
+  bool _rewardGiven = false;
 
   String _calculateRank(bool won, int score, int totalNotes) {
     if (!won) return 'F';
@@ -62,6 +72,21 @@ class ResultView extends StatelessWidget {
 
     final hitNotes = perfect + good;
     final accuracy = totalNotes > 0 ? ((hitNotes / totalNotes) * 100).toStringAsFixed(1) : '0.0';
+
+    // 코인 보상 처리 (한 번만)
+    if (!_rewardGiven && mounted) {
+      _rewardGiven = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final userProvider = context.read<UserProvider>();
+        // 클리어 기록 저장
+        userProvider.saveStageResult(stage, score, maxCombo, perfect, good, bad, miss, rank, won);
+        // 클리어 시 코인 지급
+        if (won) {
+          final stageData = StageGenerator.getStage(stage);
+          userProvider.addCoins(stageData.rewardCoins);
+        }
+      });
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFF141226),
@@ -136,7 +161,7 @@ class ResultView extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              // 상세 기록 카드 (Accuracy, Max Combo)
+              // 상세 기록 카드
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -155,7 +180,7 @@ class ResultView extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // 판정 내역 카드 (PERFECT, GOOD, BAD, MISS)
+              // 판정 내역 카드
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -179,28 +204,33 @@ class ResultView extends StatelessWidget {
               if (won)
                 Padding(
                   padding: const EdgeInsets.only(top: 16),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFD166).withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFFFD166).withValues(alpha: 0.4)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.monetization_on, color: Color(0xFFFFD166), size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          '+150 ${AppTexts.get('coins')}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFFFFD166),
-                          ),
+                  child: Builder(
+                    builder: (context) {
+                      final stageData = StageGenerator.getStage(stage);
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFD166).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFFFD166).withValues(alpha: 0.4)),
                         ),
-                      ],
-                    ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.monetization_on, color: Color(0xFFFFD166), size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              '+${stageData.rewardCoins} ${AppTexts.get('coins')}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFFFD166),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ),
 

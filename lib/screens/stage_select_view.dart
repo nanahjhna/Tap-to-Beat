@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 import '../utils/app_texts.dart';
-import '../models/stage_model.dart';
 import '../services/stage_generator.dart';
-import '../widgets/game_bottom_navigation.dart';
-import '../widgets/game_header.dart';
 
 class StageSelectView extends StatefulWidget {
   const StageSelectView({super.key});
@@ -13,6 +12,21 @@ class StageSelectView extends StatefulWidget {
 }
 
 class _StageSelectViewState extends State<StageSelectView> {
+  late PageController _pageController;
+  int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(viewportFraction: 0.85);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   Color _getDifficultyColor(String diff) {
     switch (diff.toUpperCase()) {
       case 'EASY':
@@ -41,191 +55,284 @@ class _StageSelectViewState extends State<StageSelectView> {
     return icons[(stageNum - 1) % icons.length];
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // StageGenerator에 등록된 모든 곡 리스트를 불러옵니다[cite: 1].
-    final stages = StageGenerator.allStages;
-
-    return Scaffold(
-      backgroundColor: const Color(0xFF151329),
-      appBar: const GameHeader(titleKey: 'selectStage'),
-      body: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        itemCount: stages.length,
-        itemBuilder: (context, index) {
-          final stageData = stages[index];
-
-          return _trackCard(context, stageData);
-        },
-      ),
-      bottomNavigationBar: const GameBottomNavigation(),
+  void _goToPage(int page) {
+    _pageController.animateToPage(
+      page,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
     );
   }
 
-  Widget _trackCard(BuildContext context, StageModel stage) {
-    final diffColor = _getDifficultyColor(stage.difficulty);
+  @override
+  Widget build(BuildContext context) {
+    final stages = StageGenerator.allStages;
+    final userProvider = context.watch<UserProvider>();
 
-    return Card(
-      color: const Color(0xFF201D3D),
-      elevation: 3,
-      margin: const EdgeInsets.only(bottom: 14),
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: stage.isUnlocked ? diffColor.withValues(alpha: 0.3) : Colors.white12,
-          width: 1.2,
+    return Scaffold(
+      backgroundColor: const Color(0xFF151329),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: Text(
+          AppTexts.get('selectStage'),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
+        centerTitle: true,
       ),
-      child: Opacity(
-        opacity: stage.isUnlocked ? 1.0 : 0.45,
-        child: InkWell(
-          onTap: stage.isUnlocked
-              ? () => Navigator.pushNamed(context, '/gamePlay', arguments: stage.stageNumber)
-              : null,
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                // 앨범 아트 느낌의 썸네일
-                Container(
-                  width: 76,
-                  height: 76,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        diffColor.withValues(alpha: 0.35),
-                        const Color(0xFF141226),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+      body: Column(
+        children: [
+          // 가로 스와이프 PageView
+          Expanded(
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: stages.length,
+              onPageChanged: (index) {
+                setState(() => _currentPage = index);
+              },
+              itemBuilder: (context, index) {
+                final stage = stages[index];
+                final isOwned = userProvider.ownsSong('stage_${stage.stageNumber}');
+                final diffColor = _getDifficultyColor(stage.difficulty);
+
+                return AnimatedScale(
+                  scale: _currentPage == index ? 1.0 : 0.9,
+                  duration: const Duration(milliseconds: 200),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 20),
+                    child: Card(
+                      color: const Color(0xFF201D3D),
+                      elevation: _currentPage == index ? 8 : 2,
+                      clipBehavior: Clip.antiAlias,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(
+                          color: isOwned
+                              ? diffColor.withValues(alpha: 0.5)
+                              : Colors.white12,
+                          width: _currentPage == index ? 2 : 1,
+                        ),
+                      ),
+                      child: Opacity(
+                        opacity: isOwned ? 1.0 : 0.5,
+                        child: InkWell(
+                          onTap: isOwned
+                              ? () => Navigator.pushNamed(context, '/gamePlay', arguments: stage.stageNumber)
+                              : null,
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // 앨범 아트
+                                Container(
+                                  width: 120,
+                                  height: 120,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        diffColor.withValues(alpha: 0.35),
+                                        const Color(0xFF141226),
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: diffColor.withValues(alpha: 0.5),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      Icon(
+                                        _getTrackIcon(stage.stageNumber),
+                                        size: 50,
+                                        color: diffColor,
+                                      ),
+                                      if (stage.rank != '-')
+                                        Positioned(
+                                          right: 8,
+                                          top: 8,
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFFFD166),
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              stage.rank,
+                                              style: const TextStyle(
+                                                color: Colors.black,
+                                                fontWeight: FontWeight.w900,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+
+                                // 난이도 뱃지
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: diffColor.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: diffColor.withValues(alpha: 0.6), width: 1),
+                                  ),
+                                  child: Text(
+                                    '${stage.difficulty} Lv.${stage.difficultyLevel}',
+                                    style: TextStyle(
+                                      color: diffColor,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+
+                                // 곡 정보
+                                Text(
+                                  stage.title,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  stage.artist,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'BPM ${stage.bpm}  •  ${stage.noteCount} NOTES',
+                                  style: const TextStyle(
+                                    color: Color(0xFF69B8FF),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  '${AppTexts.get('reward')}: +${stage.rewardCoins} ${AppTexts.get('coins')}',
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 16),
+
+                                // 잠금 상태 표시
+                                if (!isOwned)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black54,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.lock, color: Colors.white54, size: 16),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          '${stage.rewardCoins * 3} ${AppTexts.get('coins')} + ${AppTexts.get('buyWithAd')}',
+                                          style: const TextStyle(
+                                            color: Colors.white54,
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: diffColor.withValues(alpha: 0.5)),
                   ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Icon(
-                        _getTrackIcon(stage.stageNumber),
-                        size: 38,
-                        color: diffColor,
-                      ),
-                      if (stage.rank != '-')
-                        Positioned(
-                          right: 4,
-                          top: 4,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFD166),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              stage.rank,
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 10,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
+                );
+              },
+            ),
+          ),
+
+          // 페이지 인디케이터 (dots)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                stages.length,
+                (index) => Container(
+                  width: _currentPage == index ? 24 : 8,
+                  height: 8,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: _currentPage == index
+                        ? const Color(0xFFFFD166)
+                        : Colors.white24,
+                    borderRadius: BorderRadius.circular(4),
                   ),
                 ),
-                const SizedBox(width: 14),
+              ),
+            ),
+          ),
 
-                // 곡 정보
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: diffColor.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: diffColor.withValues(alpha: 0.6), width: 0.8),
-                            ),
-                            child: Text(
-                              '${stage.difficulty} Lv.${stage.difficultyLevel}',
-                              style: TextStyle(
-                                color: diffColor,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${AppTexts.get('stage')} ${stage.stageNumber}',
-                            style: const TextStyle(
-                              color: Color(0xFFFFD166),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        stage.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        stage.artist,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.white60,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Text(
-                            'BPM ${stage.bpm}',
-                            style: const TextStyle(
-                              color: Color(0xFF69B8FF),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            '${AppTexts.get('reward')}: +${stage.rewardCoins} ${AppTexts.get('coins')}',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+          // 좌우 화살표 버튼
+          Padding(
+            padding: const EdgeInsets.fromLTRB(40, 8, 40, 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  onPressed: _currentPage > 0
+                      ? () => _goToPage(_currentPage - 1)
+                      : null,
+                  icon: Icon(
+                    Icons.arrow_back_ios_new,
+                    color: _currentPage > 0
+                        ? const Color(0xFFFFD166)
+                        : Colors.white24,
+                    size: 28,
                   ),
                 ),
-
-                // 진입 또는 잠금 아이콘
-                Icon(
-                  stage.isUnlocked ? Icons.play_circle_fill : Icons.lock,
-                  size: 32,
-                  color: stage.isUnlocked ? const Color(0xFFFFD166) : Colors.white38,
+                Text(
+                  '${_currentPage + 1} / ${stages.length}',
+                  style: const TextStyle(
+                    color: Colors.white54,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  onPressed: _currentPage < stages.length - 1
+                      ? () => _goToPage(_currentPage + 1)
+                      : null,
+                  icon: Icon(
+                    Icons.arrow_forward_ios,
+                    color: _currentPage < stages.length - 1
+                        ? const Color(0xFFFFD166)
+                        : Colors.white24,
+                    size: 28,
+                  ),
                 ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }

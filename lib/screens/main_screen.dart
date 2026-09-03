@@ -6,6 +6,7 @@ import 'inventory_view.dart';
 import 'character_view.dart';
 import '../utils/app_texts.dart';
 import '../widgets/game_bottom_navigation.dart';
+import '../widgets/ad_banner_widget.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -19,9 +20,9 @@ class _MainScreenState extends State<MainScreen> {
 
   List<Widget> get _tabs => const [
     LobbyTab(),
-    InventoryView(embedded: true),
-    ShopView(embedded: true),
     CharacterView(embedded: true),
+    ShopView(embedded: true),
+    InventoryView(embedded: true),
     SettingsView(embedded: true),
   ];
 
@@ -34,13 +35,19 @@ class _MainScreenState extends State<MainScreen> {
           key: ValueKey(currentLang),
           child: IndexedStack(index: _currentIndex, children: _tabs),
         ),
-        bottomNavigationBar: GameBottomNavigation(
-          currentIndex: _currentIndex,
-          onTabSelected: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
+        bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const AdBannerWidget(),
+            GameBottomNavigation(
+              currentIndex: _currentIndex,
+              onTabSelected: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+            ),
+          ],
         ),
       ),
     );
