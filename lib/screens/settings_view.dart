@@ -3,6 +3,7 @@ import '../services/user_session.dart';
 import '../widgets/game_bottom_navigation.dart';
 import '../widgets/game_header.dart';
 import '../utils/app_texts.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key, this.embedded = false});
@@ -208,10 +209,22 @@ class _SettingsViewState extends State<SettingsView> {
               ),
             ),
           const SizedBox(height: 24),
-          Text(
-            'TapToBeat Rhythm v1.0.0',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.45)),
+
+          // 동적 버전 표출부 (수정된 영역)
+          FutureBuilder<PackageInfo>(
+            future: PackageInfo.fromPlatform(),
+            builder: (context, snapshot) {
+              String versionStr = 'TapToBeat Rhythm v1.0.0';
+              if (snapshot.hasData) {
+                final info = snapshot.data!;
+                versionStr = 'TapToBeat Rhythm v${info.version}+${info.buildNumber}';
+              }
+              return Text(
+                versionStr,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.45)),
+              );
+            },
           ),
         ],
       ),
@@ -219,9 +232,9 @@ class _SettingsViewState extends State<SettingsView> {
     return widget.embedded
         ? content
         : Scaffold(
-            appBar: const GameHeader(titleKey: 'settings'),
-            body: content,
-            bottomNavigationBar: const GameBottomNavigation(currentIndex: 4),
-          );
+      appBar: const GameHeader(titleKey: 'settings'),
+      body: content,
+      bottomNavigationBar: const GameBottomNavigation(currentIndex: 4),
+    );
   }
 }

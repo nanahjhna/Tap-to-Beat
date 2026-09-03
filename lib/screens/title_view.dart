@@ -1,9 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../services/user_session.dart';
 import '../utils/app_texts.dart';
 
-class TitleView extends StatelessWidget {
+class TitleView extends StatefulWidget {
   const TitleView({super.key});
+
+  @override
+  State<TitleView> createState() => _TitleViewState();
+}
+
+class _TitleViewState extends State<TitleView> {
+  String _versionString = 'v1.0.0';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() {
+        _versionString = 'v${packageInfo.version}+${packageInfo.buildNumber}';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,14 +124,14 @@ class TitleView extends StatelessWidget {
               ],
             ),
           ),
-          const Positioned(
+          Positioned(
             bottom: 24,
             left: 0,
             right: 0,
             child: Text(
-              'v1.0.0 • 4-Key Rhythm Action',
+              '$_versionString',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white38, fontSize: 12),
+              style: const TextStyle(color: Colors.white38, fontSize: 12),
             ),
           ),
         ],
