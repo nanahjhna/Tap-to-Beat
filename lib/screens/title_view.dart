@@ -129,7 +129,7 @@ class _TitleViewState extends State<TitleView> {
             left: 0,
             right: 0,
             child: Text(
-              '$_versionString',
+              _versionString,
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.white38, fontSize: 12),
             ),

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/scheduler.dart';
@@ -8,7 +7,9 @@ import 'package:provider/provider.dart';
 import 'pause_overlay.dart';
 import '../services/stage_generator.dart';
 import '../models/stage_model.dart';
+import '../models/effect_model.dart';
 import '../providers/user_provider.dart';
+import '../providers/settings_provider.dart';
 import '../utils/app_texts.dart';
 
 class RhythmNote {
@@ -35,6 +36,7 @@ class GamePlayView extends StatefulWidget {
 class _GamePlayViewState extends State<GamePlayView>
     with SingleTickerProviderStateMixin {
   late final AudioPlayer _audioPlayer;
+  late final AudioPlayer _sfxPlayer;
   late final Stopwatch _stopwatch;
   late final Ticker _ticker;
 
@@ -74,6 +76,7 @@ class _GamePlayViewState extends State<GamePlayView>
   void initState() {
     super.initState();
     _audioPlayer = AudioPlayer();
+    _sfxPlayer = AudioPlayer();
     _stopwatch = Stopwatch();
     _ticker = createTicker(_onTick);
   }
@@ -90,21 +93,15 @@ class _GamePlayViewState extends State<GamePlayView>
 
   void _initGame() {
     _notes.clear();
-    final totalNotes = _stageData?.noteCount ?? 80;
-    final random = Random(42 + (_stageData?.stageNumber ?? 1));
-
-    double currentTime = 1500.0;
-    for (int i = 0; i < totalNotes; i++) {
-      final trackIdx = random.nextInt(4);
+    final noteDataList = _stageData?.notes ?? const <NoteData>[];
+    int id = 0;
+    for (final n in noteDataList) {
       _notes.add(RhythmNote(
-        id: i,
-        track: trackIdx,
-        targetTimeMs: currentTime,
+        id: id++,
+        track: n.lane,
+        targetTimeMs: n.timeMs.toDouble(),
       ));
-      final interval = (i % 4 == 0) ? 500.0 : 250.0;
-      currentTime += interval;
     }
-
     _startGame();
   }
 
@@ -122,12 +119,17 @@ class _GamePlayViewState extends State<GamePlayView>
     _gameEnded = false;
 
     // 최근 플레이 곡 업데이트
+    final userProvider = context.read<UserProvider>();
+    final settingsProvider = context.read<SettingsProvider>();
+    final bgmVolume = settingsProvider.bgmVolume;
+    final sfxVolume = settingsProvider.sfxVolume;
     if (mounted) {
-      final userProvider = context.read<UserProvider>();
       await userProvider.setLastPlayedStage(_stageData?.stageNumber ?? 1);
     }
 
     try {
+      await _audioPlayer.setVolume(bgmVolume);
+      await _sfxPlayer.setVolume(sfxVolume);
       final soundPath = _stageData?.audioPath ?? 'sounds/Mikoshi_Mayhem.mp3';
       await _audioPlayer.play(AssetSource(soundPath));
     } catch (e) {
@@ -143,11 +145,12 @@ class _GamePlayViewState extends State<GamePlayView>
     if (!_isPlaying || _isPaused || _gameEnded) return;
 
     final currentMs = _stopwatch.elapsedMilliseconds.toDouble();
+    final judgeMs = _effectiveMs();
 
     // 판정선 지나침 (Miss) 검사
     for (final note in _notes) {
       if (!note.isHit && !note.isMissed) {
-        if (currentMs > note.targetTimeMs + 180.0) {
+        if (judgeMs > note.targetTimeMs + 180.0) {
           note.isMissed = true;
           _handleMiss(isBad: false);
         }
@@ -185,8 +188,34 @@ class _GamePlayViewState extends State<GamePlayView>
     }
   }
 
+  double _effectiveMs() {
+    final offset = context.read<SettingsProvider>().timingOffset;
+    return _stopwatch.elapsedMilliseconds.toDouble() - offset;
+  }
+
+  void _playSfx() {
+    try {
+      _sfxPlayer.stop();
+      _sfxPlayer.play(AssetSource('sounds/start.mp3'));
+    } catch (_) {}
+  }
+
+  Color _notesColor() {
+    final userProvider = context.read<UserProvider>();
+    const defaultColor = Color(0xFF2ED573);
+    // 장착된 노트 스킨 우선 적용
+    for (final skin in ShopData.noteSkins) {
+      if (userProvider.isEffectEquipped(skin.id)) return skin.color;
+    }
+    // 스킨 없으면 장착된 이펙트 색 반영
+    for (final effect in ShopData.effects) {
+      if (userProvider.isEffectEquipped(effect.id)) return effect.color;
+    }
+    return defaultColor;
+  }
+
   void _judgeTrack(int trackIdx) {
-    final currentMs = _stopwatch.elapsedMilliseconds.toDouble();
+    final currentMs = _effectiveMs();
 
     RhythmNote? targetNote;
     double minDiff = double.infinity;
@@ -223,6 +252,7 @@ class _GamePlayViewState extends State<GamePlayView>
         _countBad++;
         _handleMiss(isBad: true);
       }
+      _playSfx();
       setState(() {});
     }
   }
@@ -317,6 +347,7 @@ class _GamePlayViewState extends State<GamePlayView>
     _ticker.dispose();
     _stopwatch.stop();
     _audioPlayer.dispose();
+    _sfxPlayer.dispose();
     _focusNode.dispose();
     super.dispose();
   }
@@ -439,6 +470,7 @@ class _GamePlayViewState extends State<GamePlayView>
                           constraints.maxWidth,
                           judgeLineY,
                           currentMs,
+                          _notesColor(),
                         ),
 
                         // 판정 및 콤보 이펙트 표시 영역
@@ -599,6 +631,7 @@ class _GamePlayViewState extends State<GamePlayView>
     double boardWidth,
     double judgeLineY,
     double currentMs,
+    Color noteColor,
   ) {
     final trackWidth = boardWidth / 4.0;
     final widgets = <Widget>[];
@@ -623,11 +656,11 @@ class _GamePlayViewState extends State<GamePlayView>
           height: 18,
           child: Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF2ED573),
+              color: noteColor,
               borderRadius: BorderRadius.circular(4),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF2ED573).withValues(alpha: 0.7),
+                  color: noteColor.withValues(alpha: 0.7),
                   blurRadius: 8,
                   spreadRadius: 1,
                 ),

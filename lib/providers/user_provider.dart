@@ -21,9 +21,6 @@ class UserProvider extends ChangeNotifier {
   bool isSongEquipped(String itemId) => _equippedSongs.contains(itemId);
   bool isEffectEquipped(String itemId) => _equippedEffects.contains(itemId);
 
-  Set<String> get ownedSongs => Set.unmodifiable(_ownedSongs);
-  Set<String> get ownedEffects => Set.unmodifiable(_ownedEffects);
-
   Future<void> init() async {
     _userId = await _db.getOrCreateUser();
     _coins = await _db.getCoins(_userId);
@@ -141,7 +138,10 @@ class UserProvider extends ChangeNotifier {
     );
   }
 
-  Future<Map<String, dynamic>?> getBestResult(int stageId) async {
-    return await _db.getBestResult(_userId, stageId);
-  }
+  // ── 퀘스트 / 업적 ──
+
+  Future<int> getClearedCount() async => _db.getClearedCount(_userId);
+  Future<bool> hasRankS() async => _db.hasRankS(_userId);
+  Future<bool> isQuestClaimed(String questId) async => _db.isQuestClaimed(_userId, questId);
+  Future<void> claimQuest(String questId) async => _db.claimQuest(_userId, questId);
 }

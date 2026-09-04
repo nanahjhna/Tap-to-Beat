@@ -1,23 +1,5 @@
 import 'package:flutter/material.dart';
 
-class EffectItem {
-  final String id;
-  final String name;
-  final String desc;
-  final int price;
-  final Color color;
-  final IconData icon;
-
-  const EffectItem({
-    required this.id,
-    required this.name,
-    required this.desc,
-    required this.price,
-    required this.color,
-    required this.icon,
-  });
-}
-
 class ShopItem {
   final String id;
   final String name;

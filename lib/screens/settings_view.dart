@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/settings_provider.dart';
 import '../services/user_session.dart';
 import '../widgets/game_bottom_navigation.dart';
 import '../widgets/game_header.dart';
@@ -14,9 +16,6 @@ class SettingsView extends StatefulWidget {
 
 class _SettingsViewState extends State<SettingsView> {
   String? _provider;
-  double _bgmVolume = 0.8;
-  double _sfxVolume = 0.9;
-  double _timingOffset = 0.0; // -100ms to +100ms
 
   @override
   void initState() {
@@ -36,6 +35,7 @@ class _SettingsViewState extends State<SettingsView> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = context.watch<SettingsProvider>();
     final content = SafeArea(
       top: widget.embedded,
       child: ListView(
@@ -63,14 +63,14 @@ class _SettingsViewState extends State<SettingsView> {
                           Text(AppTexts.get('bgmVolume'), style: const TextStyle(fontWeight: FontWeight.bold)),
                         ],
                       ),
-                      Text('${(_bgmVolume * 100).toInt()}%', style: const TextStyle(color: Color(0xFFFFD166), fontWeight: FontWeight.bold)),
+                      Text('${(settings.bgmVolume * 100).toInt()}%', style: const TextStyle(color: Color(0xFFFFD166), fontWeight: FontWeight.bold)),
                     ],
                   ),
                   Slider(
-                    value: _bgmVolume,
+                    value: settings.bgmVolume,
                     activeColor: const Color(0xFFFFD166),
                     inactiveColor: Colors.white12,
-                    onChanged: (v) => setState(() => _bgmVolume = v),
+                    onChanged: (v) => settings.setBgmVolume(v),
                   ),
                 ],
               ),
@@ -100,14 +100,14 @@ class _SettingsViewState extends State<SettingsView> {
                           Text(AppTexts.get('sfxVolume'), style: const TextStyle(fontWeight: FontWeight.bold)),
                         ],
                       ),
-                      Text('${(_sfxVolume * 100).toInt()}%', style: const TextStyle(color: Color(0xFF2ED573), fontWeight: FontWeight.bold)),
+                      Text('${(settings.sfxVolume * 100).toInt()}%', style: const TextStyle(color: Color(0xFF2ED573), fontWeight: FontWeight.bold)),
                     ],
                   ),
                   Slider(
-                    value: _sfxVolume,
+                    value: settings.sfxVolume,
                     activeColor: const Color(0xFF2ED573),
                     inactiveColor: Colors.white12,
-                    onChanged: (v) => setState(() => _sfxVolume = v),
+                    onChanged: (v) => settings.setSfxVolume(v),
                   ),
                 ],
               ),
@@ -138,7 +138,7 @@ class _SettingsViewState extends State<SettingsView> {
                         ],
                       ),
                       Text(
-                        '${_timingOffset > 0 ? '+' : ''}${_timingOffset.toInt()} ms',
+                        '${settings.timingOffset > 0 ? '+' : ''}${settings.timingOffset.toInt()} ms',
                         style: const TextStyle(color: Color(0xFF1E90FF), fontWeight: FontWeight.bold),
                       ),
                     ],
@@ -149,13 +149,13 @@ class _SettingsViewState extends State<SettingsView> {
                     style: const TextStyle(fontSize: 11, color: Colors.white60),
                   ),
                   Slider(
-                    value: _timingOffset,
+                    value: settings.timingOffset,
                     min: -100.0,
                     max: 100.0,
                     divisions: 40,
                     activeColor: const Color(0xFF1E90FF),
                     inactiveColor: Colors.white12,
-                    onChanged: (v) => setState(() => _timingOffset = v),
+                    onChanged: (v) => settings.setTimingOffset(v),
                   ),
                 ],
               ),

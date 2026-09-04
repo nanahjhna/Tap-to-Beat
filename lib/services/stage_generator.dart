@@ -1,3 +1,4 @@
+import 'dart:math';
 import '../models/stage_model.dart';
 
 class StageGenerator {
@@ -9,7 +10,7 @@ class StageGenerator {
       bpm: 140,
       difficulty: 'NORMAL',
       difficultyLevel: 3,
-      audioPath: 'assets/audio/Mikoshi_Mayhem.mp3',
+      audioPath: 'sounds/Mikoshi_Mayhem.mp3',
       jacketAsset: 'assets/images/jacket_mikoshi.png',
       isUnlocked: true,
       rank: 'S',
@@ -28,7 +29,7 @@ class StageGenerator {
       bpm: 155,
       difficulty: 'HARD',
       difficultyLevel: 6,
-      audioPath: 'assets/audio/neon_cyberpunk.mp3',
+      audioPath: 'sounds/Mikoshi_Mayhem.mp3',
       jacketAsset: 'assets/images/jacket_neon.png',
       isUnlocked: true,
       rank: '-',
@@ -41,9 +42,35 @@ class StageGenerator {
   ];
 
   static StageModel generateStage(int stageNum, int userMaxStage) {
-    return allStages.firstWhere(
-          (stage) => stage.stageNumber == stageNum,
+    final base = allStages.firstWhere(
+      (stage) => stage.stageNumber == stageNum,
       orElse: () => allStages.first,
+    );
+
+    final random = Random(42 + stageNum);
+    final targetNotes = 60 + (base.difficultyLevel * 20) + (stageNum * 10);
+    final notes = <NoteData>[];
+    double timeMs = 1000.0;
+    for (int i = 0; i < targetNotes; i++) {
+      final lane = random.nextInt(4);
+      notes.add(NoteData(timeMs: timeMs.round(), lane: lane));
+      final beatMs = 60000 / base.bpm;
+      timeMs += (i % 4 == 0) ? beatMs / 2 : beatMs / 4;
+    }
+
+    return StageModel(
+      stageNumber: base.stageNumber,
+      title: base.title,
+      artist: base.artist,
+      bpm: base.bpm,
+      difficulty: base.difficulty,
+      difficultyLevel: base.difficultyLevel,
+      audioPath: base.audioPath,
+      jacketAsset: base.jacketAsset,
+      notes: notes,
+      isUnlocked: base.isUnlocked,
+      rank: base.rank,
+      rewardCoins: base.rewardCoins,
     );
   }
 

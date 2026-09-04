@@ -59,6 +59,16 @@ class DatabaseHelper {
       )
     ''');
 
+    await db.execute('''
+      CREATE TABLE quest_claims (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        quest_id TEXT,
+        claimed_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    ''');
+
     // 기본 유저 생성 (게스트)
     final userId = await db.insert('users', {'coins': 0, 'last_played_stage_id': 1});
     // 기본 소유곡: stage_1
@@ -111,13 +121,6 @@ class DatabaseHelper {
           where: 'user_id = ? AND item_type = ?', whereArgs: [userId, type]);
     }
     return await db.query('owned_items', where: 'user_id = ?', whereArgs: [userId]);
-  }
-
-  Future<bool> isItemOwned(int userId, String itemId) async {
-    final db = await database;
-    final result = await db.query('owned_items',
-        where: 'user_id = ? AND item_id = ?', whereArgs: [userId, itemId]);
-    return result.isNotEmpty;
   }
 
   Future<void> addOwnedItem(int userId, String itemId, String type) async {
@@ -207,12 +210,37 @@ class DatabaseHelper {
     });
   }
 
-  Future<Map<String, dynamic>?> getBestResult(int userId, int stageId) async {
+  // ── 퀘스트 / 업적 통계 ──
+
+  Future<int> getClearedCount(int userId) async {
     final db = await database;
-    final results = await db.query('stage_results',
-        where: 'user_id = ? AND stage_id = ?', whereArgs: [userId, stageId],
-        orderBy: 'score DESC');
-    if (results.isEmpty) return null;
-    return results.first;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) AS cnt FROM stage_results WHERE user_id = ? AND cleared = 1',
+      [userId],
+    );
+    if (result.isEmpty) return 0;
+    return (result.first['cnt'] as int?) ?? 0;
+  }
+
+  Future<bool> hasRankS(int userId) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) AS cnt FROM stage_results WHERE user_id = ? AND rank = \'S\'',
+      [userId],
+    );
+    if (result.isEmpty) return false;
+    return ((result.first['cnt'] as int?) ?? 0) > 0;
+  }
+
+  Future<bool> isQuestClaimed(int userId, String questId) async {
+    final db = await database;
+    final result = await db.query('quest_claims',
+        where: 'user_id = ? AND quest_id = ?', whereArgs: [userId, questId]);
+    return result.isNotEmpty;
+  }
+
+  Future<void> claimQuest(int userId, String questId) async {
+    final db = await database;
+    await db.insert('quest_claims', {'user_id': userId, 'quest_id': questId});
   }
 }

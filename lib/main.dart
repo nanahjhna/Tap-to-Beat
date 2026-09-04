@@ -5,6 +5,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
 
 import 'providers/user_provider.dart';
+import 'providers/settings_provider.dart';
 import 'screens/title_view.dart';
 import 'screens/main_screen.dart';
 import 'screens/shop_view.dart';
@@ -32,9 +33,15 @@ void main() async {
   final userProvider = UserProvider();
   await userProvider.init();
 
+  final settingsProvider = SettingsProvider();
+  await settingsProvider.load();
+
   runApp(
-    ChangeNotifierProvider.value(
-      value: userProvider,
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: userProvider),
+        ChangeNotifierProvider.value(value: settingsProvider),
+      ],
       child: const TapToBeatGameApp(),
     ),
   );
