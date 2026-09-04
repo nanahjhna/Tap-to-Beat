@@ -1,50 +1,63 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class AdRewardHelper {
   static final AdRewardHelper instance = AdRewardHelper._init();
-  RewardedAd? _rewardedAd;
+  RewardedInterstitialAd? _rewardedAd;
   bool _isLoading = false;
+  bool _didEarnReward = false;
+  Completer<bool>? _pendingCompleter;
 
   AdRewardHelper._init();
 
-  String get _adUnitId => kReleaseMode
-      ? 'ca-app-pub-1474045642143501/1234567890' // TODO: 실제 rewarded ad 단위 ID로 교체
-      : 'ca-app-pub-3940256099942521/5224354917'; // Google 테스트 ID
+  static const _adUnitId = 'ca-app-pub-1474045642143501/9082538235';
 
   Future<void> loadAd() async {
     if (_rewardedAd != null || _isLoading) return;
     _isLoading = true;
 
-    await RewardedAd.load(
+    await RewardedInterstitialAd.load(
       adUnitId: _adUnitId,
       request: const AdRequest(),
-      rewardedAdLoadCallback: RewardedAdLoadCallback(
+      rewardedInterstitialAdLoadCallback: RewardedInterstitialAdLoadCallback(
         onAdLoaded: (ad) {
           _rewardedAd = ad;
           _isLoading = false;
           _setupCallbacks(ad);
         },
         onAdFailedToLoad: (error) {
-          debugPrint('RewardedAd failed to load: $error');
+          debugPrint('RewardedInterstitialAd failed to load: $error');
           _isLoading = false;
         },
       ),
     );
   }
 
-  void _setupCallbacks(RewardedAd ad) {
+  void _setupCallbacks(RewardedInterstitialAd ad) {
     ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
+        _completePending(_didEarnReward);
         ad.dispose();
         _rewardedAd = null;
+        _didEarnReward = false;
         loadAd(); // 다음 광고 미리 로드
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
+        _completePending(false);
         ad.dispose();
         _rewardedAd = null;
+        _didEarnReward = false;
       },
     );
+  }
+
+  void _completePending(bool success) {
+    final completer = _pendingCompleter;
+    _pendingCompleter = null;
+    if (completer != null && !completer.isCompleted) {
+      completer.complete(success);
+    }
   }
 
   Future<bool> showAdAndGetReward() async {
@@ -53,15 +66,22 @@ class AdRewardHelper {
       if (_rewardedAd == null) return false;
     }
 
-    bool rewardEarned = false;
+    _didEarnReward = false;
+    final completer = Completer<bool>();
+    _pendingCompleter = completer;
 
-    await _rewardedAd!.show(
-      onUserEarnedReward: (ad, reward) {
-        rewardEarned = true;
-      },
-    );
+    try {
+      await _rewardedAd!.show(
+        onUserEarnedReward: (ad, reward) {
+          _didEarnReward = true;
+        },
+      );
+    } catch (e) {
+      debugPrint('RewardedInterstitialAd show failed: $e');
+      _completePending(false);
+    }
 
-    return rewardEarned;
+    return completer.future;
   }
 
   void dispose() {

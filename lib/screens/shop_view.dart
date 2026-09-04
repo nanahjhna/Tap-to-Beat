@@ -127,11 +127,52 @@ class _ShopViewState extends State<ShopView> {
       success = await userProvider.purchaseSong(itemId, coinCost);
     }
 
-    if (!success && mounted) {
+    if (success && mounted) {
+      _showCenterToast(AppTexts.get('purchaseSuccess'));
+    } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppTexts.get('coinNotEnough'))),
       );
     }
+  }
+
+  void _showCenterToast(String message) {
+    final overlay = Overlay.of(context);
+    late final OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (context) => Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
+          decoration: BoxDecoration(
+            color: const Color(0xFF221F42),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFFFD166), width: 1.5),
+            boxShadow: const [
+              BoxShadow(color: Colors.black54, blurRadius: 20, offset: Offset(0, 6)),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.check_circle, color: Color(0xFF2ED573), size: 28),
+              const SizedBox(width: 10),
+              Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    overlay.insert(entry);
+    Future.delayed(const Duration(milliseconds: 1400), () {
+      entry.remove();
+    });
   }
 
   @override
@@ -199,7 +240,18 @@ class _ShopViewState extends State<ShopView> {
   }
 
   Widget _buildSongList(UserProvider userProvider) {
-    final stages = StageGenerator.allStages;
+    final stages = StageGenerator.allStages
+        .where((s) => !userProvider.ownsSong('stage_${s.stageNumber}'))
+        .toList();
+
+    if (stages.isEmpty) {
+      return Center(
+        child: Text(
+          AppTexts.get('allSongsOwned'),
+          style: const TextStyle(color: Colors.white54, fontSize: 16),
+        ),
+      );
+    }
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -207,7 +259,6 @@ class _ShopViewState extends State<ShopView> {
       itemBuilder: (context, index) {
         final stage = stages[index];
         final itemId = 'stage_${stage.stageNumber}';
-        final isOwned = userProvider.ownsSong(itemId);
         final coinCost = stage.rewardCoins * 3;
 
         return _shopCard(
@@ -217,10 +268,8 @@ class _ShopViewState extends State<ShopView> {
           color: const Color(0xFF1E90FF),
           coinPrice: coinCost,
           requireAd: true,
-          isOwned: isOwned,
-          onTap: isOwned
-              ? null
-              : () => _showPurchaseDialog(itemId, stage.title, coinCost, true),
+          isOwned: false,
+          onTap: () => _showPurchaseDialog(itemId, stage.title, coinCost, true),
         );
       },
     );
