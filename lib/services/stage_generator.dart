@@ -11,8 +11,6 @@ class StageGenerator {
       difficulty: 'NORMAL',
       difficultyLevel: 3,
       audioPath: 'sounds/Mikoshi_Mayhem.mp3',
-      jacketAsset: 'assets/images/jacket_mikoshi.png',
-      isUnlocked: true,
       rank: 'S',
       rewardCoins: 200,
       notes: [
@@ -30,8 +28,6 @@ class StageGenerator {
       difficulty: 'HARD',
       difficultyLevel: 6,
       audioPath: 'sounds/Mikoshi_Mayhem.mp3',
-      jacketAsset: 'assets/images/jacket_neon.png',
-      isUnlocked: true,
       rank: '-',
       rewardCoins: 350,
       notes: [
@@ -41,7 +37,7 @@ class StageGenerator {
     ),
   ];
 
-  static StageModel generateStage(int stageNum, int userMaxStage) {
+  static StageModel generateStage(int stageNum) {
     final base = allStages.firstWhere(
       (stage) => stage.stageNumber == stageNum,
       orElse: () => allStages.first,
@@ -66,13 +62,11 @@ class StageGenerator {
       difficulty: base.difficulty,
       difficultyLevel: base.difficultyLevel,
       audioPath: base.audioPath,
-      jacketAsset: base.jacketAsset,
       notes: notes,
-      isUnlocked: base.isUnlocked,
       rank: base.rank,
       rewardCoins: base.rewardCoins,
     );
   }
 
-  static StageModel getStage(int id) => generateStage(id, id);
+  static StageModel getStage(int id) => generateStage(id);
 }

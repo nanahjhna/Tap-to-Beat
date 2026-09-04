@@ -259,46 +259,10 @@ class _LobbyTabState extends State<LobbyTab> {
                   ),
                 ),
                 const SizedBox(height: 24),
-
-                // 플레이어 리듬 통계 요약
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF221F42),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: const [
-                      _LobbyStat(title: 'DJ RANK', value: 'S-Class'),
-                      _LobbyStat(title: 'MAX COMBO', value: '80'),
-                      _LobbyStat(title: 'CLEARED', value: '5 Songs'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
               ],
             ),
           ),
         ),
-      ],
-    );
-  }
-}
-
-class _LobbyStat extends StatelessWidget {
-  const _LobbyStat({required this.title, required this.value});
-  final String title;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFFFFD166))),
-        const SizedBox(height: 4),
-        Text(title, style: const TextStyle(fontSize: 11, color: Colors.white60)),
       ],
     );
   }

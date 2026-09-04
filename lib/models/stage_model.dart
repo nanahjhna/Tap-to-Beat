@@ -12,11 +12,9 @@ class StageModel {
   final String difficulty;
   final int difficultyLevel;
   final String audioPath;
-  final String jacketAsset;
   final List<NoteData> notes;
 
   // Extra UI states
-  final bool isUnlocked;
   final String rank;
   final int rewardCoins;
 
@@ -28,9 +26,7 @@ class StageModel {
     required this.difficulty,
     required this.difficultyLevel,
     required this.audioPath,
-    required this.jacketAsset,
     required this.notes,
-    this.isUnlocked = true,
     this.rank = '-',
     this.rewardCoins = 150,
   });

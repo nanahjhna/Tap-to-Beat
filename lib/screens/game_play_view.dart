@@ -86,7 +86,7 @@ class _GamePlayViewState extends State<GamePlayView>
     super.didChangeDependencies();
     if (_stageData == null) {
       final stageNum = ModalRoute.of(context)?.settings.arguments as int? ?? 1;
-      _stageData = StageGenerator.generateStage(stageNum, stageNum);
+      _stageData = StageGenerator.generateStage(stageNum);
       _initGame();
     }
   }
