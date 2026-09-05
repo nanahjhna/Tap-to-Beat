@@ -1,0 +1,39 @@
+TapToBeat 작업 대화 기록 (2026-09-06)
+=====================================
+
+1. 전체 리뷰 요청
+- report.txt(구 보스연타 프로토타입)는 구버전, 현재 코드는 4키 리듬게임이 실제 구현체임을 확인.
+- 구현완료: game_play(723줄, 판정/콤보/라이프/오프셋), stage_select/result/shop/inventory, lobby/main/settings/providers/DB/AdReward/widgets.
+- 목업: character(정적 프로필), notice(하드코딩 공지+메모리 출석), login/account_link(OAuth 없이 문자열 저장+SnackBar).
+- 반쪽: quest(문구 하드코딩), stage_generator(2곡, 시드난수 의사채보, 음원중복), loading(버전비교 TODO).
+- 지적사항: taptoeat.db 오타의심, 광고 실ID 하드코딩, pause중 설정진입, 빈 onPause/catch, 하드코딩 문구/색상, debugPrint 잔존, docs 구버전 서술, character 하단인덱스 불일치 의심.
+
+2. character_view 인벤토리 버튼 제거
+- ElevatedButton(/inventory) + 상하 SizedBox 삭제, AppTexts가 버튼에서만 쓰여 import도 제거.
+- 하단탭 인벤토리 진입은 유지.
+
+3. 추가 요청 3건
+- notice_view 공지 하드코딩: 탭 유지 + 빈 상태 표시로 결정.
+- login Apple 제거: login + account_link + app_texts appleLogin 3언어키 전부 정리로 결정.
+- stage 난이도: 기존 2곡 리밸런싱이 아니라 E/N/H 3곡 신설로 결정.
+- 전부 적용 완료. flutter analyze 통과(기존 package name info 1건만 남음).
+
+4. 스테이지 곡 탭 -> 난이도 팝업
+- 형태: 곡=난이도 1:1 정보팝업이 아니라, 곡 1개당 EASY/NORMAL/HARD 3택 선택 팝업으로 결정.
+- 미보유곡: 반응없음 유지가 아니라 잠금 팝업(가격+상점 유도) 표시로 결정.
+- 보상/QUICK PLAY 질문(A/B)은 미답변 -> 기본값으로 진행:
+  A. 보상 = 곡 기본보상 x 난이도배율 (E 1.0 / N 1.5 / H 2.0)
+  B. QUICK PLAY = NORMAL 기본 시작 (마지막 난이도 기억은 DB컬럼 추가 필요라 제외)
+
+5. 이번 빌드 구현 내용
+- stage_generator.dart: difficultySpecs 테이블(E Lv2 x1.0 / N Lv4 x1.5 / H Lv6 x2.0), normalizeDifficulty(), generateStage(stageNum, {difficulty}), getStage(id, {difficulty}) 확장. 노트수 = 60 + level*20 + stageNum*10, 시드 = 42 + stageNum*10 + level.
+- stage_select_view.dart: InkWell onTap -> _onStageTap 분기. 보유곡은 _showDifficultyPopup(곡명/아티스트 + E/N/H 3버튼, 각 Lv/노트수/보상 표시, 탭하면 /gamePlay에 Map 인자 전달). 미보유곡은 _showLockPopup(가격=reward*3, 코인+광고 안내, 상점 버튼).
+- game_play_view.dart: didChangeDependencies에서 Map{stage, difficulty} + 구형 int 둘 다 처리(구형은 NORMAL 폴백). _finishGame result 인자에 difficulty 추가.
+- result_view.dart: difficulty 읽기, 보상표시/코인 지급에 getStage(stage, difficulty) 사용, 재도전 버튼이 같은 난이도 Map으로 전달.
+- lobby QUICK PLAY: int 그대로 -> NORMAL로 시작 (변경 없음).
+- 검증: flutter analyze 이슈 1건(기존 package_names info만), 에러 0.
+
+6. 주의사항
+- 스테이지 번호 재배치(구1 NORMAL -> 신2)로 기존 설치폰 stage_results 번호 어긋남. 개발중이면 앱 삭제 후 재설치 권장.
+- 3곡 음원이 모두 같은 Mikoshi_Mayhem.mp3 재사용 중. 신규 음원 추가 시 교체 필요.
+- 난이도별 보상배율과 QUICK PLAY 동작은 나중에 바꾸고 싶으면 말해줄 것.

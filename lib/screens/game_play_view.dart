@@ -60,7 +60,6 @@ class _GamePlayViewState extends State<GamePlayView>
   Color _judgeColor = Colors.white;
   Timer? _judgeClearTimer;
 
-  static const double _fallDurationMs = 1500.0;
   static const List<LogicalKeyboardKey> _keyCodes = [
     LogicalKeyboardKey.keyD,
     LogicalKeyboardKey.keyF,
@@ -72,11 +71,30 @@ class _GamePlayViewState extends State<GamePlayView>
   StageModel? _stageData;
   final FocusNode _focusNode = FocusNode();
 
+  String get _difficulty => _stageData?.difficulty ?? 'NORMAL';
+  double get _fallDurationMs =>
+      StageGenerator.playValue(_difficulty, 'fallMs');
+
   @override
   void initState() {
     super.initState();
     _audioPlayer = AudioPlayer();
-    _sfxPlayer = AudioPlayer();
+    // 타격음은 짧은 틱이라 저지연 모드 + 믹싱 유지 (BGM과 겹쳐 재생)
+    _sfxPlayer = AudioPlayer(playerId: 'hit_sfx')
+      ..setPlayerMode(PlayerMode.lowLatency)
+      ..setAudioContext(AudioContext(
+        android: AudioContextAndroid(
+          isSpeakerphoneOn: true,
+          stayAwake: true,
+          contentType: AndroidContentType.sonification,
+          usageType: AndroidUsageType.game,
+          audioFocus: AndroidAudioFocus.gainTransientMayDuck,
+        ),
+        iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.playback,
+          options: {AVAudioSessionOptions.mixWithOthers},
+        ),
+      ));
     _stopwatch = Stopwatch();
     _ticker = createTicker(_onTick);
   }
@@ -85,8 +103,18 @@ class _GamePlayViewState extends State<GamePlayView>
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_stageData == null) {
-      final stageNum = ModalRoute.of(context)?.settings.arguments as int? ?? 1;
-      _stageData = StageGenerator.generateStage(stageNum);
+      final args = ModalRoute.of(context)?.settings.arguments;
+      int stageNum = 1;
+      String difficulty = 'NORMAL';
+      if (args is Map) {
+        stageNum = args['stage'] as int? ?? 1;
+        difficulty = StageGenerator.normalizeDifficulty(
+            args['difficulty'] as String?);
+      } else if (args is int) {
+        stageNum = args;
+      }
+      _stageData =
+          StageGenerator.generateStage(stageNum, difficulty: difficulty);
       _initGame();
     }
   }
@@ -147,10 +175,11 @@ class _GamePlayViewState extends State<GamePlayView>
     final currentMs = _stopwatch.elapsedMilliseconds.toDouble();
     final judgeMs = _effectiveMs();
 
-    // 판정선 지나침 (Miss) 검사
+    // 판정선 지나침 (Miss) 검사 — 난이도별 유예 적용
+    final missGraceMs = StageGenerator.playValue(_difficulty, 'missGraceMs');
     for (final note in _notes) {
       if (!note.isHit && !note.isMissed) {
-        if (judgeMs > note.targetTimeMs + 180.0) {
+        if (judgeMs > note.targetTimeMs + missGraceMs) {
           note.isMissed = true;
           _handleMiss(isBad: false);
         }
@@ -195,8 +224,8 @@ class _GamePlayViewState extends State<GamePlayView>
 
   void _playSfx() {
     try {
-      _sfxPlayer.stop();
-      _sfxPlayer.play(AssetSource('sounds/start.mp3'));
+      // 짧은 틱이라 stop() 없이 겹쳐 재생 (연타 끊김 해소)
+      _sfxPlayer.play(AssetSource('sounds/hit.wav'), mode: PlayerMode.lowLatency);
     } catch (_) {}
   }
 
@@ -230,20 +259,25 @@ class _GamePlayViewState extends State<GamePlayView>
       }
     }
 
-    // 판정 범위: 200ms 이내
-    if (targetNote != null && minDiff <= 200.0) {
+    // 판정 범위: 난이도별 BAD폭 이내
+    final perfectMs = StageGenerator.playValue(_difficulty, 'perfectMs');
+    final goodMs = StageGenerator.playValue(_difficulty, 'goodMs');
+    final badMs = StageGenerator.playValue(_difficulty, 'badMs');
+    final healPerfect = StageGenerator.playValue(_difficulty, 'healPerfect');
+    final healGood = StageGenerator.playValue(_difficulty, 'healGood');
+    if (targetNote != null && minDiff <= badMs) {
       targetNote.isHit = true;
 
-      if (minDiff <= 65.0) {
+      if (minDiff <= perfectMs) {
         _showJudgment('PERFECT', const Color(0xFF2ED573));
         _score += 300;
-        _life = (_life + 3.0).clamp(0.0, 100.0);
+        _life = (_life + healPerfect).clamp(0.0, 100.0);
         _countPerfect++;
         _addCombo();
-      } else if (minDiff <= 125.0) {
+      } else if (minDiff <= goodMs) {
         _showJudgment('GOOD', const Color(0xFF1E90FF));
         _score += 100;
-        _life = (_life + 1.0).clamp(0.0, 100.0);
+        _life = (_life + healGood).clamp(0.0, 100.0);
         _countGood++;
         _addCombo();
       } else {
@@ -266,12 +300,14 @@ class _GamePlayViewState extends State<GamePlayView>
 
   void _handleMiss({bool isBad = false}) {
     _combo = 0;
+    final missDmg = StageGenerator.playValue(_difficulty, 'missDmg');
+    final badDmg = StageGenerator.playValue(_difficulty, 'badDmg');
     if (!isBad) {
       _countMiss++;
       _showJudgment('MISS', const Color(0xFFFF4757));
-      _life = (_life - 7.0).clamp(0.0, 100.0);
+      _life = (_life - missDmg).clamp(0.0, 100.0);
     } else {
-      _life = (_life - 3.0).clamp(0.0, 100.0);
+      _life = (_life - badDmg).clamp(0.0, 100.0);
     }
     setState(() {});
   }
@@ -303,6 +339,7 @@ class _GamePlayViewState extends State<GamePlayView>
       arguments: {
         'victory': victory,
         'stage': _stageData?.stageNumber ?? 1,
+        'difficulty': _stageData?.difficulty ?? 'NORMAL',
         'score': _score,
         'maxCombo': _maxCombo,
         'perfect': _countPerfect,

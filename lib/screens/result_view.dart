@@ -57,6 +57,8 @@ class _ResultViewState extends State<ResultView> {
 
     final won = data['victory'] == true;
     final stage = data['stage'] as int? ?? 1;
+    final difficulty =
+        StageGenerator.normalizeDifficulty(data['difficulty'] as String?);
     final score = data['score'] as int? ?? 0;
     final maxCombo = data['maxCombo'] as int? ?? 0;
     final perfect = data['perfect'] as int? ?? 0;
@@ -82,7 +84,8 @@ class _ResultViewState extends State<ResultView> {
         userProvider.saveStageResult(stage, score, maxCombo, perfect, good, bad, miss, rank, won);
         // 클리어 시 코인 지급
         if (won) {
-          final stageData = StageGenerator.getStage(stage);
+          final stageData =
+              StageGenerator.getStage(stage, difficulty: difficulty);
           userProvider.addCoins(stageData.rewardCoins);
         }
       });
@@ -206,7 +209,8 @@ class _ResultViewState extends State<ResultView> {
                   padding: const EdgeInsets.only(top: 16),
                   child: Builder(
                     builder: (context) {
-                      final stageData = StageGenerator.getStage(stage);
+                      final stageData = StageGenerator.getStage(stage,
+                          difficulty: difficulty);
                       return Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         decoration: BoxDecoration(
@@ -240,8 +244,9 @@ class _ResultViewState extends State<ResultView> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () =>
-                      Navigator.pushReplacementNamed(context, '/gamePlay', arguments: stage),
+                  onPressed: () => Navigator.pushReplacementNamed(
+                      context, '/gamePlay',
+                      arguments: {'stage': stage, 'difficulty': difficulty}),
                   icon: const Icon(Icons.replay_rounded),
                   label: Text(AppTexts.get('retry')),
                   style: ElevatedButton.styleFrom(

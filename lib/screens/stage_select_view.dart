@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../utils/app_texts.dart';
 import '../services/stage_generator.dart';
+import '../models/stage_model.dart';
 
 class StageSelectView extends StatefulWidget {
   const StageSelectView({super.key});
@@ -63,6 +64,132 @@ class _StageSelectViewState extends State<StageSelectView> {
     );
   }
 
+  void _onStageTap(BuildContext context, StageModel stage, bool isOwned) {
+    if (isOwned) {
+      _showDifficultyPopup(context, stage);
+    } else {
+      _showLockPopup(context, stage);
+    }
+  }
+
+  void _showDifficultyPopup(BuildContext context, StageModel stage) {
+    const difficulties = ['EASY', 'NORMAL', 'HARD'];
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: const Color(0xFF201D3D),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(stage.title,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900)),
+            const SizedBox(height: 4),
+            Text('${stage.artist} • BPM ${stage.bpm}',
+                style: const TextStyle(color: Colors.white60, fontSize: 13)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: difficulties.map((diff) {
+            final preview = StageGenerator.generateStage(
+              stage.stageNumber,
+              difficulty: diff,
+            );
+            final color = _getDifficultyColor(diff);
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(dialogContext);
+                    Navigator.pushNamed(
+                      context,
+                      '/gamePlay',
+                      arguments: {
+                        'stage': stage.stageNumber,
+                        'difficulty': diff,
+                      },
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: color.withValues(alpha: 0.2),
+                    foregroundColor: color,
+                    side: BorderSide(color: color.withValues(alpha: 0.6)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text(
+                    '$diff Lv.${preview.difficultyLevel} • ${preview.noteCount} NOTES • +${preview.rewardCoins}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(AppTexts.get('back'),
+                style: const TextStyle(color: Colors.white54)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLockPopup(BuildContext context, StageModel stage) {
+    final price = stage.rewardCoins * 3;
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: const Color(0xFF201D3D),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.lock, color: Colors.white54, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(stage.title,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900)),
+            ),
+          ],
+        ),
+        content: Text(
+          '$price ${AppTexts.get('coins')} + ${AppTexts.get('buyWithAd')}',
+          style: const TextStyle(color: Colors.white70, fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(AppTexts.get('back'),
+                style: const TextStyle(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              Navigator.pushNamed(context, '/shop');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFFD166),
+              foregroundColor: Colors.black,
+            ),
+            child: Text(AppTexts.get('shop')),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final stages = StageGenerator.allStages;
@@ -114,9 +241,8 @@ class _StageSelectViewState extends State<StageSelectView> {
                       child: Opacity(
                         opacity: isOwned ? 1.0 : 0.5,
                         child: InkWell(
-                          onTap: isOwned
-                              ? () => Navigator.pushNamed(context, '/gamePlay', arguments: stage.stageNumber)
-                              : null,
+                          onTap: () =>
+                              _onStageTap(context, stage, isOwned),
                           child: Padding(
                             padding: const EdgeInsets.all(24),
                             child: Column(
@@ -269,69 +395,71 @@ class _StageSelectViewState extends State<StageSelectView> {
             ),
           ),
 
-          // 페이지 인디케이터 (dots)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                stages.length,
-                (index) => Container(
-                  width: _currentPage == index ? 24 : 8,
-                  height: 8,
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  decoration: BoxDecoration(
-                    color: _currentPage == index
-                        ? const Color(0xFFFFD166)
-                        : Colors.white24,
-                    borderRadius: BorderRadius.circular(4),
+          // 페이지 인디케이터 (dots) — 단일 곡일 때 숨김
+          if (stages.length > 1)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  stages.length,
+                  (index) => Container(
+                    width: _currentPage == index ? 24 : 8,
+                    height: 8,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: _currentPage == index
+                          ? const Color(0xFFFFD166)
+                          : Colors.white24,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
 
-          // 좌우 화살표 버튼
-          Padding(
-            padding: const EdgeInsets.fromLTRB(40, 8, 40, 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  onPressed: _currentPage > 0
-                      ? () => _goToPage(_currentPage - 1)
-                      : null,
-                  icon: Icon(
-                    Icons.arrow_back_ios_new,
-                    color: _currentPage > 0
-                        ? const Color(0xFFFFD166)
-                        : Colors.white24,
-                    size: 28,
+          // 좌우 화살표 버튼 — 단일 곡일 때 숨김
+          if (stages.length > 1)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(40, 8, 40, 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    onPressed: _currentPage > 0
+                        ? () => _goToPage(_currentPage - 1)
+                        : null,
+                    icon: Icon(
+                      Icons.arrow_back_ios_new,
+                      color: _currentPage > 0
+                          ? const Color(0xFFFFD166)
+                          : Colors.white24,
+                      size: 28,
+                    ),
                   ),
-                ),
-                Text(
-                  '${_currentPage + 1} / ${stages.length}',
-                  style: const TextStyle(
-                    color: Colors.white54,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
+                  Text(
+                    '${_currentPage + 1} / ${stages.length}',
+                    style: const TextStyle(
+                      color: Colors.white54,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                IconButton(
-                  onPressed: _currentPage < stages.length - 1
-                      ? () => _goToPage(_currentPage + 1)
-                      : null,
-                  icon: Icon(
-                    Icons.arrow_forward_ios,
-                    color: _currentPage < stages.length - 1
-                        ? const Color(0xFFFFD166)
-                        : Colors.white24,
-                    size: 28,
+                  IconButton(
+                    onPressed: _currentPage < stages.length - 1
+                        ? () => _goToPage(_currentPage + 1)
+                        : null,
+                    icon: Icon(
+                      Icons.arrow_forward_ios,
+                      color: _currentPage < stages.length - 1
+                          ? const Color(0xFFFFD166)
+                          : Colors.white24,
+                      size: 28,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );

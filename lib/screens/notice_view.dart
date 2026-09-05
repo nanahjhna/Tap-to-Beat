@@ -44,22 +44,15 @@ class _NoticeViewState extends State<NoticeView> with SingleTickerProviderStateM
   );
 
   Widget _notices() {
-    final noticesList = [
-      AppTexts.get('noticeEvent1'),
-      AppTexts.get('noticeUpdate1'),
-      AppTexts.get('termsOfService'),
-    ];
-    return ListView(
-      children: noticesList.map((title) => ExpansionTile(
-        title: Text(title),
-        subtitle: const Text('2026.08.29'),
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(AppTexts.get('noticeContent')),
-          ),
-        ],
-      )).toList(),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Text(
+          AppTexts.get('noItems'),
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white54, fontSize: 14),
+        ),
+      ),
     );
   }
 

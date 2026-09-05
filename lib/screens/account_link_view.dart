@@ -20,7 +20,6 @@ class AccountLinkView extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _link(context, 'Google', Icons.g_mobiledata),
-        _link(context, 'Apple', Icons.apple),
         const SizedBox(height: 20),
         Text(
           AppTexts.get('accountLinkDesc'),

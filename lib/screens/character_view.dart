@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
-import '../utils/app_texts.dart';
 import '../widgets/game_bottom_navigation.dart';
 import '../widgets/game_header.dart';
 
@@ -96,22 +95,6 @@ class CharacterView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => Navigator.pushNamed(context, '/inventory'),
-                icon: const Icon(Icons.style_rounded),
-                label: Text(AppTexts.get('inventory')),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFD166),
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
           ],
         ),
       ),

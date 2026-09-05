@@ -23,7 +23,7 @@ Ollama를 터미널(PowerShell 또는 명령 프롬프트)에서 다룰 때 가�
 * **모델 다운로드 (설치)**
 * 명령어: `ollama pull <모델이름>`
 * 설명: 지정한 로컬 LLM을 내 컴퓨터로 다운로드합니다. (예: `ollama pull qwen2.5-coder:1.5b`)
-
+ollama pull llama3.1:8b
 
 * **설치된 모델 목록 확인**
 * 명령어: `ollama list`

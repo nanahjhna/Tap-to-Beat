@@ -132,16 +132,19 @@ class _InventoryViewState extends State<InventoryView> {
   }
 
   Widget _inventoryCard(UserProvider userProvider, _InventoryItemData item) {
+    final isSong = item.type == 'song';
+    // 곡은 장착 개념 없음 → 테두리/문구 강조도 적용 안 함
+    final highlight = !isSong && item.isEquipped;
     return Card(
       color: const Color(0xFF221F42),
       margin: const EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
         side: BorderSide(
-          color: item.isEquipped
+          color: highlight
               ? item.color.withValues(alpha: 0.8)
               : Colors.white12,
-          width: item.isEquipped ? 1.5 : 1.0,
+          width: highlight ? 1.5 : 1.0,
         ),
       ),
       child: ListTile(
@@ -161,28 +164,42 @@ class _InventoryViewState extends State<InventoryView> {
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
         ),
         subtitle: Text(
-          item.isEquipped
+          highlight
               ? '${AppTexts.get('equipped')} • ${item.desc}'
               : item.desc,
           style: TextStyle(
             fontSize: 12,
-            color: item.isEquipped ? const Color(0xFFFFD166) : Colors.white60,
+            color: highlight ? const Color(0xFFFFD166) : Colors.white60,
           ),
         ),
-        trailing: Switch(
-          value: item.isEquipped,
-          onChanged: (value) {
-            if (item.type == 'song') {
-              userProvider.toggleEquipSong(item.id);
-            } else {
-              userProvider.toggleEquipEffect(item.id);
-            }
-          },
-          activeThumbColor: const Color(0xFFFFD166),
-          activeTrackColor: const Color(0xFFFFD166).withValues(alpha: 0.3),
-          inactiveThumbColor: Colors.white54,
-          inactiveTrackColor: Colors.white12,
-        ),
+        trailing: isSong
+            ? Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white12,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  AppTexts.get('owned'),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              )
+            : Switch(
+                value: item.isEquipped,
+                onChanged: (value) {
+                  userProvider.toggleEquipEffect(item.id);
+                },
+                activeThumbColor: const Color(0xFFFFD166),
+                activeTrackColor:
+                    const Color(0xFFFFD166).withValues(alpha: 0.3),
+                inactiveThumbColor: Colors.white54,
+                inactiveTrackColor: Colors.white12,
+              ),
       ),
     );
   }
