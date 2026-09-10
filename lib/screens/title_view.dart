@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../services/user_session.dart';
 import '../utils/app_texts.dart';
+import '../widgets/ad_banner_widget.dart';
 
 class TitleView extends StatefulWidget {
   const TitleView({super.key});
@@ -124,8 +125,16 @@ class _TitleViewState extends State<TitleView> {
               ],
             ),
           ),
+          // 화면 최하단에 배치된 배너 위젯
+          const Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: AdBannerWidget(),
+          ),
+          // 배너 위쪽에 위치하도록 조정된 버전 텍스트
           Positioned(
-            bottom: 24,
+            bottom: 65,
             left: 0,
             right: 0,
             child: Text(

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
+import '../widgets/game_bottom_navigation.dart';
 import '../utils/app_texts.dart';
 import '../services/stage_generator.dart';
 import '../models/stage_model.dart';
+import '../widgets/ad_banner_widget.dart';
 
 class StageSelectView extends StatefulWidget {
   const StageSelectView({super.key});
@@ -205,6 +207,12 @@ class _StageSelectViewState extends State<StageSelectView> {
         ),
         centerTitle: true,
       ),
+      bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            GameBottomNavigation(currentIndex: 0),
+          ],
+        ),
       body: Column(
         children: [
           // 가로 스와이프 PageView
@@ -224,7 +232,7 @@ class _StageSelectViewState extends State<StageSelectView> {
                   scale: _currentPage == index ? 1.0 : 0.9,
                   duration: const Duration(milliseconds: 200),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 20),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                     child: Card(
                       color: const Color(0xFF201D3D),
                       elevation: _currentPage == index ? 8 : 2,
@@ -244,14 +252,14 @@ class _StageSelectViewState extends State<StageSelectView> {
                           onTap: () =>
                               _onStageTap(context, stage, isOwned),
                           child: Padding(
-                            padding: const EdgeInsets.all(24),
+                            padding: const EdgeInsets.all(20),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 // 앨범 아트
                                 Container(
-                                  width: 120,
-                                  height: 120,
+                                  width: 100,
+                                  height: 100,
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
@@ -272,7 +280,7 @@ class _StageSelectViewState extends State<StageSelectView> {
                                     children: [
                                       Icon(
                                         _getTrackIcon(stage.stageNumber),
-                                        size: 50,
+                                        size: 45,
                                         color: diffColor,
                                       ),
                                       if (stage.rank != '-')
@@ -298,7 +306,7 @@ class _StageSelectViewState extends State<StageSelectView> {
                                     ],
                                   ),
                                 ),
-                                const SizedBox(height: 20),
+                                const SizedBox(height: 14),
 
                                 // 난이도 뱃지
                                 Container(
@@ -317,7 +325,7 @@ class _StageSelectViewState extends State<StageSelectView> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 10),
 
                                 // 곡 정보
                                 Text(
@@ -326,7 +334,7 @@ class _StageSelectViewState extends State<StageSelectView> {
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
-                                    fontSize: 22,
+                                    fontSize: 20,
                                     fontWeight: FontWeight.w900,
                                     color: Colors.white,
                                   ),
@@ -336,11 +344,11 @@ class _StageSelectViewState extends State<StageSelectView> {
                                   stage.artist,
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 13,
                                     color: Colors.white70,
                                   ),
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 6),
                                 Text(
                                   'BPM ${stage.bpm}  •  ${stage.noteCount} NOTES',
                                   style: const TextStyle(
@@ -349,7 +357,7 @@ class _StageSelectViewState extends State<StageSelectView> {
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 6),
                                 Text(
                                   '${AppTexts.get('reward')}: +${stage.rewardCoins} ${AppTexts.get('coins')}',
                                   style: const TextStyle(
@@ -358,12 +366,12 @@ class _StageSelectViewState extends State<StageSelectView> {
                                   ),
                                 ),
 
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 10),
 
                                 // 잠금 상태 표시
                                 if (!isOwned)
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                                     decoration: BoxDecoration(
                                       color: Colors.black54,
                                       borderRadius: BorderRadius.circular(12),
@@ -371,7 +379,7 @@ class _StageSelectViewState extends State<StageSelectView> {
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Icon(Icons.lock, color: Colors.white54, size: 16),
+                                        const Icon(Icons.lock, color: Colors.white54, size: 14),
                                         const SizedBox(width: 6),
                                         Text(
                                           '${stage.rewardCoins * 3} ${AppTexts.get('coins')} + ${AppTexts.get('buyWithAd')}',
@@ -398,20 +406,20 @@ class _StageSelectViewState extends State<StageSelectView> {
           // 페이지 인디케이터 (dots) — 단일 곡일 때 숨김
           if (stages.length > 1)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
                   stages.length,
-                  (index) => Container(
-                    width: _currentPage == index ? 24 : 8,
-                    height: 8,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                      (index) => Container(
+                    width: _currentPage == index ? 20 : 6,
+                    height: 6,
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
                     decoration: BoxDecoration(
                       color: _currentPage == index
                           ? const Color(0xFFFFD166)
                           : Colors.white24,
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(3),
                     ),
                   ),
                 ),
@@ -421,7 +429,7 @@ class _StageSelectViewState extends State<StageSelectView> {
           // 좌우 화살표 버튼 — 단일 곡일 때 숨김
           if (stages.length > 1)
             Padding(
-              padding: const EdgeInsets.fromLTRB(40, 8, 40, 20),
+              padding: const EdgeInsets.fromLTRB(40, 4, 40, 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -434,14 +442,14 @@ class _StageSelectViewState extends State<StageSelectView> {
                       color: _currentPage > 0
                           ? const Color(0xFFFFD166)
                           : Colors.white24,
-                      size: 28,
+                      size: 24,
                     ),
                   ),
                   Text(
                     '${_currentPage + 1} / ${stages.length}',
                     style: const TextStyle(
                       color: Colors.white54,
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -454,7 +462,7 @@ class _StageSelectViewState extends State<StageSelectView> {
                       color: _currentPage < stages.length - 1
                           ? const Color(0xFFFFD166)
                           : Colors.white24,
-                      size: 28,
+                      size: 24,
                     ),
                   ),
                 ],

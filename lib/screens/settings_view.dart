@@ -7,6 +7,24 @@ import '../widgets/game_header.dart';
 import '../utils/app_texts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+Widget _getVersionString(BuildContext context) {
+  return FutureBuilder<PackageInfo>(
+    future: PackageInfo.fromPlatform(),
+    builder: (context, snapshot) {
+      String versionStr = 'TapToBeat Rhythm v1.0.0';
+      if (snapshot.hasData) {
+        final info = snapshot.data!;
+        versionStr = 'TapToBeat Rhythm v${info.version}+${info.buildNumber}';
+      }
+      return Text(
+        versionStr,
+        textAlign: TextAlign.center,
+        style: TextStyle(color: Colors.white.withValues(alpha: 0.45)),
+      );
+    },
+  );
+}
+
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key, this.embedded = false});
   final bool embedded;
@@ -163,69 +181,9 @@ class _SettingsViewState extends State<SettingsView> {
           ),
           const SizedBox(height: 14),
 
-          // 계정 관리 카드
-          Card(
-            color: const Color(0xFF221F42),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: Colors.white12),
-            ),
-            child: ListTile(
-              onTap: () => Navigator.pushNamed(context, '/accountLink'),
-              title: Text(AppTexts.get('account')),
-              subtitle: Text(_provider ?? AppTexts.get('checkingLogin')),
-              leading: const Icon(Icons.link, color: Colors.white70),
-              trailing: const Icon(Icons.chevron_right, color: Colors.white70),
-            ),
-          ),
-          if (_provider == 'guest')
-            Card(
-              color: const Color(0xFF221F42),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: const BorderSide(color: Colors.white12),
-              ),
-              child: ListTile(
-                onTap: () => Navigator.pushNamed(context, '/accountLink'),
-                title: Text(AppTexts.get('linkGoogle')),
-                subtitle: Text(AppTexts.get('currentGuest')),
-                leading: const Icon(Icons.g_mobiledata, color: Colors.white70),
-                trailing: const Icon(Icons.chevron_right, color: Colors.white70),
-              ),
-            ),
-          if (_provider == 'google')
-            Card(
-              color: const Color(0xFF221F42),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: const BorderSide(color: Colors.white12),
-              ),
-              child: ListTile(
-                onTap: _logout,
-                title: Text(AppTexts.get('logout')),
-                subtitle: Text(AppTexts.get('logoutGuide')),
-                leading: const Icon(Icons.logout, color: Colors.redAccent),
-                trailing: const Icon(Icons.chevron_right, color: Colors.white70),
-              ),
-            ),
-          const SizedBox(height: 24),
-
           // 동적 버전 표출부 (수정된 영역)
-          FutureBuilder<PackageInfo>(
-            future: PackageInfo.fromPlatform(),
-            builder: (context, snapshot) {
-              String versionStr = 'TapToBeat Rhythm v1.0.0';
-              if (snapshot.hasData) {
-                final info = snapshot.data!;
-                versionStr = 'TapToBeat Rhythm v${info.version}+${info.buildNumber}';
-              }
-              return Text(
-                versionStr,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.45)),
-              );
-            },
-          ),
+          _getVersionString(context),
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -234,7 +192,13 @@ class _SettingsViewState extends State<SettingsView> {
         : Scaffold(
       appBar: const GameHeader(titleKey: 'settings'),
       body: content,
-      bottomNavigationBar: const GameBottomNavigation(currentIndex: 4),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _getVersionString(context),
+          const GameBottomNavigation(currentIndex: 4),
+        ],
+      ),
     );
   }
 }

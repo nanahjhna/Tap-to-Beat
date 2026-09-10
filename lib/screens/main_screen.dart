@@ -38,7 +38,6 @@ class _MainScreenState extends State<MainScreen> {
         bottomNavigationBar: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const AdBannerWidget(),
             GameBottomNavigation(
               currentIndex: _currentIndex,
               onTabSelected: (index) {
