@@ -10,7 +10,7 @@ class StageGenerator {
       bpm: 140,
       difficulty: 'NORMAL',
       difficultyLevel: 4,
-      audioPath: 'sounds/Mikoshi_Mayhem.mp3',
+      audioPath: 'sounds/basicmusic/MikoshiMayhem.mp3',
       rank: 'S',
       rewardCoins: 200,
       notes: [

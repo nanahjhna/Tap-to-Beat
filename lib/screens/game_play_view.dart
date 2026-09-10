@@ -158,7 +158,7 @@ class _GamePlayViewState extends State<GamePlayView>
     try {
       await _audioPlayer.setVolume(bgmVolume);
       await _sfxPlayer.setVolume(sfxVolume);
-      final soundPath = _stageData?.audioPath ?? 'sounds/Mikoshi_Mayhem.mp3';
+      final soundPath = _stageData?.audioPath ?? 'sounds/basicmusic/MikoshiMayhem.mp3';
       await _audioPlayer.play(AssetSource(soundPath));
     } catch (e) {
       debugPrint('Audio playback error (fallback to internal timer): $e');

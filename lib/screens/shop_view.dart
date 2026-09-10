@@ -17,7 +17,7 @@ class ShopView extends StatefulWidget {
 }
 
 class _ShopViewState extends State<ShopView> {
-  int _selectedTab = 0; // 0: 곡, 1: 이펙트
+  int _selectedTab = 0; // 0: 곡, 1: 이펙트, 2: 음악
 
   @override
   void initState() {
@@ -214,6 +214,7 @@ class _ShopViewState extends State<ShopView> {
               segments: [
                 ButtonSegment(value: 0, label: Text(AppTexts.get('songs'))),
                 ButtonSegment(value: 1, label: Text(AppTexts.get('effects'))),
+                ButtonSegment(value: 2, label: Text(AppTexts.get('music'))),
               ],
               selected: {_selectedTab},
               onSelectionChanged: (v) => setState(() => _selectedTab = v.first),
@@ -224,7 +225,11 @@ class _ShopViewState extends State<ShopView> {
 
           // 아이템 목록
           Expanded(
-            child: _selectedTab == 0 ? _buildSongList(userProvider) : _buildEffectList(userProvider),
+            child: _selectedTab == 0
+                ? _buildSongList(userProvider)
+                : _selectedTab == 1
+                    ? _buildEffectList(userProvider)
+                    : _buildMusicList(userProvider),
           ),
         ],
       ),
@@ -296,6 +301,32 @@ class _ShopViewState extends State<ShopView> {
           onTap: isOwned
               ? null
               : () => _showPurchaseDialog(item.id, item.name, item.coinPrice, false),
+        );
+      },
+    );
+  }
+
+  Widget _buildMusicList(UserProvider userProvider) {
+    final allItems = [...ShopData.shopMusic];
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: allItems.length,
+      itemBuilder: (context, index) {
+        final item = allItems[index];
+        final isOwned = userProvider.ownsSong(item.id);
+
+        return _shopCard(
+          name: item.name,
+          desc: item.desc,
+          icon: item.icon,
+          color: item.color,
+          coinPrice: item.coinPrice,
+          requireAd: true,
+          isOwned: isOwned,
+          onTap: isOwned
+              ? null
+              : () => _showPurchaseDialog(item.id, item.name, item.coinPrice, true),
         );
       },
     );

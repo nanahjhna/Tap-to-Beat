@@ -42,5 +42,5 @@ lib/
   * GOOD (±125ms, +100점, 체력 +1)
   * BAD (±200ms, +50점, 체력 -3, 콤보 리셋)
   * MISS (노트 놓침, 체력 -7, 콤보 리셋)
-- 음원 재생: Mikoshi_Mayhem.mp3 오디오 동기화 및 Stopwatch 정밀 폴백
+- 음원 재생: MikoshiMayhem.mp3 오디오 동기화 및 Stopwatch 정밀 폴백
 - 게임오버 / 클리어 시 상세 분석(Rank, Accuracy %, Max Combo, 판정별 개수) 결과창 연동

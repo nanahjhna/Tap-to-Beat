@@ -109,4 +109,16 @@ class ShopData {
       type: 'effect',
     ),
   ];
+
+  static const List<ShopItem> shopMusic = [
+    ShopItem(
+      id: 'music_twilight_highway',
+      name: 'Twilight Highway',
+      desc: 'atmospheric ambient track',
+      coinPrice: 200,
+      color: Color(0xFF9B59B6),
+      icon: Icons.music_note_rounded,
+      type: 'music',
+    ),
+  ];
 }
