@@ -3,7 +3,6 @@ import 'lobby_tab.dart';
 import 'shop_view.dart';
 import 'settings_view.dart';
 import 'inventory_view.dart';
-import 'character_view.dart';
 import '../utils/app_texts.dart';
 import '../widgets/game_bottom_navigation.dart';
 import '../widgets/ad_banner_widget.dart';
@@ -20,7 +19,6 @@ class _MainScreenState extends State<MainScreen> {
 
   List<Widget> get _tabs => const [
     LobbyTab(),
-    CharacterView(embedded: true),
     ShopView(embedded: true),
     InventoryView(embedded: true),
     SettingsView(embedded: true),

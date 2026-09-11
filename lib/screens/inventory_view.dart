@@ -59,6 +59,7 @@ class _InventoryViewState extends State<InventoryView> {
 
     // 소유한 곡 추가
     if (_category == 0 || _category == 1) {
+      // 1) Stage 기반 곡 (stage_1, stage_2, ...)
       for (final stage in StageGenerator.allStages) {
         final itemId = 'stage_${stage.stageNumber}';
         if (userProvider.ownsSong(itemId)) {
@@ -72,6 +73,29 @@ class _InventoryViewState extends State<InventoryView> {
             isEquipped: userProvider.isSongEquipped(itemId),
           ));
         }
+      }
+      
+      // 2) Shop에서 구매한 음악 (music_twilight_highway, ...)
+      // UserProvider의 _ownedSongs Set에 music_로 시작하는 ID가 있으면 표시
+      for (final id in userProvider.ownedSongs) {
+        // stage_로 시작하면 이미 above 로직에서 처리했으니 건너뜀
+        if (id.startsWith('stage_')) continue;
+        
+        // ShopData.shopMusic에서 해당 ID 매칭
+        final musicItem = ShopData.shopMusic.firstWhere(
+          (item) => item.id == id,
+          orElse: () => ShopData.shopMusic.first, // 폴백 (없는 경우 첫 곡)
+        );
+        
+        items.add(_InventoryItemData(
+          id: id,
+          name: musicItem.name,
+          desc: musicItem.desc,
+          type: 'song',
+          color: musicItem.color,
+          icon: musicItem.icon,
+          isEquipped: false, // 곡은 장착 개념 없음
+        ));
       }
     }
 

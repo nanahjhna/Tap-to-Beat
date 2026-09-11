@@ -10,7 +10,6 @@ import 'screens/title_view.dart';
 import 'screens/main_screen.dart';
 import 'screens/shop_view.dart';
 import 'screens/settings_view.dart';
-import 'screens/character_view.dart';
 import 'screens/stage_select_view.dart';
 import 'screens/game_play_view.dart';
 import 'screens/result_view.dart';
@@ -84,8 +83,7 @@ class TapToBeatGameApp extends StatelessWidget {
         '/main': (context) => const MainScreen(),
         '/shop': (context) => const ShopView(),
         '/settings': (context) => const SettingsView(),
-        '/character': (context) => const CharacterView(),
-        '/stageSelect': (context) => const StageSelectView(),
+        '/stageSelect': (context) => StageSelectView(),
         '/gamePlay': (context) => const GamePlayView(),
         '/result': (context) => const ResultView(),
         '/inventory': (context) => const InventoryView(),

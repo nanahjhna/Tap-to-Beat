@@ -7,7 +7,7 @@ class GameBottomNavigation extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int>? onTabSelected;
 
-  static const List<String> _routes = ['/main', '/character', '/shop', '/inventory', '/settings'];
+  static const List<String> _routes = ['/main', '/shop', '/inventory', '/settings'];
 
   @override
   Widget build(BuildContext context) => Column(
@@ -31,7 +31,6 @@ class GameBottomNavigation extends StatelessWidget {
         },
         items: [
           BottomNavigationBarItem(icon: const Icon(Icons.home), label: AppTexts.get('lobby')),
-          BottomNavigationBarItem(icon: const Icon(Icons.person), label: AppTexts.get('character')),
           BottomNavigationBarItem(icon: const Icon(Icons.shopping_bag), label: AppTexts.get('shop')),
           BottomNavigationBarItem(icon: const Icon(Icons.inventory_2), label: AppTexts.get('inventory')),
           BottomNavigationBarItem(icon: const Icon(Icons.settings), label: AppTexts.get('settings')),

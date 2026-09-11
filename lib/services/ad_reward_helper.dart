@@ -49,6 +49,10 @@ class AdRewardHelper {
         _rewardedAd = null;
         _didEarnReward = false;
       },
+      onAdImpression: (RewardedInterstitialAd? ad) {
+        // 광고가 노출될 때 보상 상태로 전환 (some ad networks)
+        // 사용자가 광고를 전체 시청했다고 간주할 수 있음
+      },
     );
   }
 

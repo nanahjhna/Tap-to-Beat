@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../models/effect_model.dart';
-import '../services/stage_generator.dart';
 import '../services/ad_reward_helper.dart';
 import '../widgets/game_bottom_navigation.dart';
 import '../widgets/game_header.dart';
@@ -17,7 +16,7 @@ class ShopView extends StatefulWidget {
 }
 
 class _ShopViewState extends State<ShopView> {
-  int _selectedTab = 0; // 0: 곡, 1: 이펙트, 2: 음악
+  int _selectedTab = 0; // 0: 음악, 1: 이펙트
 
   @override
   void initState() {
@@ -84,9 +83,9 @@ class _ShopViewState extends State<ShopView> {
           ElevatedButton(
             onPressed: canAfford
                 ? () {
-                    Navigator.pop(ctx);
-                    _purchaseItem(itemId, coinCost, requireAd);
-                  }
+              Navigator.pop(ctx);
+              _purchaseItem(itemId, coinCost, requireAd);
+            }
                 : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFFD166),
@@ -207,14 +206,13 @@ class _ShopViewState extends State<ShopView> {
             ),
           ),
 
-          // 카테고리 탭
+          // 카테고리 탭 (음악, 이펙트)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: SegmentedButton<int>(
               segments: [
                 ButtonSegment(value: 0, label: Text(AppTexts.get('songs'))),
                 ButtonSegment(value: 1, label: Text(AppTexts.get('effects'))),
-                ButtonSegment(value: 2, label: Text(AppTexts.get('music'))),
               ],
               selected: {_selectedTab},
               onSelectionChanged: (v) => setState(() => _selectedTab = v.first),
@@ -226,10 +224,8 @@ class _ShopViewState extends State<ShopView> {
           // 아이템 목록
           Expanded(
             child: _selectedTab == 0
-                ? _buildSongList(userProvider)
-                : _selectedTab == 1
-                    ? _buildEffectList(userProvider)
-                    : _buildMusicList(userProvider),
+                ? _buildMusicList(userProvider)
+                : _buildEffectList(userProvider),
           ),
         ],
       ),
@@ -238,45 +234,9 @@ class _ShopViewState extends State<ShopView> {
     return widget.embedded
         ? content
         : Scaffold(
-            appBar: const GameHeader(titleKey: 'shop'),
-            body: content,
-            bottomNavigationBar: const GameBottomNavigation(currentIndex: 2),
-          );
-  }
-
-  Widget _buildSongList(UserProvider userProvider) {
-    final stages = StageGenerator.allStages
-        .where((s) => !userProvider.ownsSong('stage_${s.stageNumber}'))
-        .toList();
-
-    if (stages.isEmpty) {
-      return Center(
-        child: Text(
-          AppTexts.get('allSongsOwned'),
-          style: const TextStyle(color: Colors.white54, fontSize: 16),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: stages.length,
-      itemBuilder: (context, index) {
-        final stage = stages[index];
-        final itemId = 'stage_${stage.stageNumber}';
-        final coinCost = stage.rewardCoins * 3;
-
-        return _shopCard(
-          name: stage.title,
-          desc: '${stage.artist} • BPM ${stage.bpm} • ${stage.difficulty}',
-          icon: Icons.music_note_rounded,
-          color: const Color(0xFF1E90FF),
-          coinPrice: coinCost,
-          requireAd: true,
-          isOwned: false,
-          onTap: () => _showPurchaseDialog(itemId, stage.title, coinCost, true),
-        );
-      },
+      appBar: const GameHeader(titleKey: 'shop'),
+      body: content,
+      bottomNavigationBar: const GameBottomNavigation(currentIndex: 2),
     );
   }
 
@@ -365,42 +325,42 @@ class _ShopViewState extends State<ShopView> {
         subtitle: Text(desc, style: const TextStyle(fontSize: 12, color: Colors.white60)),
         trailing: isOwned
             ? Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF2ED573).withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  AppTexts.get('owned'),
-                  style: const TextStyle(
-                    color: Color(0xFF2ED573),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              )
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFF2ED573).withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            AppTexts.get('owned'),
+            style: const TextStyle(
+              color: Color(0xFF2ED573),
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+        )
             : ElevatedButton(
-                onPressed: onTap,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFD166),
-                  foregroundColor: Colors.black,
-                  minimumSize: const Size(70, 36),
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.monetization_on, size: 14),
-                    const SizedBox(width: 4),
-                    Text('$coinPrice', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
-                    if (requireAd) ...[
-                      const SizedBox(width: 4),
-                      const Icon(Icons.play_circle_outline, size: 14),
-                    ],
-                  ],
-                ),
-              ),
+          onPressed: onTap,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFFFD166),
+            foregroundColor: Colors.black,
+            minimumSize: const Size(70, 36),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.monetization_on, size: 14),
+              const SizedBox(width: 4),
+              Text('$coinPrice', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+              if (requireAd) ...[
+                const SizedBox(width: 4),
+                const Icon(Icons.play_circle_outline, size: 14),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

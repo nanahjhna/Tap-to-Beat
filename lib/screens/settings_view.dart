@@ -51,6 +51,15 @@ class _SettingsViewState extends State<SettingsView> {
     if (mounted) Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
   }
 
+  Future<void> _convertToGoogle() async {
+    await UserSession.saveLoginProvider('google');
+    if (!context.mounted) return;
+    Navigator.pushReplacementNamed(context, '/main');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppTexts.get('loginSuccess'))),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsProvider>();
@@ -180,6 +189,59 @@ class _SettingsViewState extends State<SettingsView> {
             ),
           ),
           const SizedBox(height: 14),
+
+          // 게스트 전용: Google 계정으로 전환 섹션
+          if (_provider == 'guest') ...[
+            Card(
+              color: const Color(0xFF221F42),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: const BorderSide(color: Colors.white12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.g_mobiledata, color: Color(0xFF1E90FF)),
+                            const SizedBox(width: 8),
+                            Text(AppTexts.get('switchToGoogle'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          ],
+                       ),
+                        Text(
+                          '+${AppTexts.get('coins')} 보너스',
+                          style: const TextStyle(color: Color(0xFFFFD166), fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '게임 진행 상황과 데이터를 Google 계정에 연동할 수 있습니다.',
+                      style: const TextStyle(fontSize: 11, color: Colors.white60),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFFD166),
+                          foregroundColor: Colors.black,
+                        ),
+                        onPressed: _convertToGoogle,
+                        child: Text(AppTexts.get('switchToGoogle'), style: const TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+          ],
 
           // 동적 버전 표출부 (수정된 영역)
           _getVersionString(context),

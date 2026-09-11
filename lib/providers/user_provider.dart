@@ -17,6 +17,11 @@ class UserProvider extends ChangeNotifier {
   int get lastPlayedStageId => _lastPlayedStageId;
 
   bool ownsSong(String itemId) => _ownedSongs.contains(itemId);
+
+  // ── 공개된 Set getter ──
+
+  Set<String> get ownedSongs => _ownedSongs;
+  Set<String> get ownedEffects => _ownedEffects;
   bool ownsEffect(String itemId) => _ownedEffects.contains(itemId);
   bool isSongEquipped(String itemId) => _equippedSongs.contains(itemId);
   bool isEffectEquipped(String itemId) => _equippedEffects.contains(itemId);
@@ -64,9 +69,18 @@ class UserProvider extends ChangeNotifier {
 
   Future<bool> purchaseSong(String itemId, int cost) async {
     if (_ownedSongs.contains(itemId)) return false;
-    final success = await spendCoins(cost);
-    if (!success) return false;
-    await _db.addOwnedItem(_userId, itemId, 'song');
+
+    final coinSuccess = await spendCoins(cost);
+    if (!coinSuccess) return false;
+
+    try {
+      await _db.addOwnedItem(_userId, itemId, 'song');
+    } catch (e) {
+      // 데이터베이스 저장 실패 시 코인 환불
+      await addCoins(cost);
+      rethrow;
+    }
+
     _ownedSongs.add(itemId);
     notifyListeners();
     return true;
@@ -76,9 +90,18 @@ class UserProvider extends ChangeNotifier {
 
   Future<bool> purchaseEffect(String itemId, int cost) async {
     if (_ownedEffects.contains(itemId)) return false;
-    final success = await spendCoins(cost);
-    if (!success) return false;
-    await _db.addOwnedItem(_userId, itemId, 'effect');
+
+    final coinSuccess = await spendCoins(cost);
+    if (!coinSuccess) return false;
+
+    try {
+      await _db.addOwnedItem(_userId, itemId, 'effect');
+    } catch (e) {
+      // 데이터베이스 저장 실패 시 코인 환불
+      await addCoins(cost);
+      rethrow;
+    }
+
     _ownedEffects.add(itemId);
     notifyListeners();
     return true;
