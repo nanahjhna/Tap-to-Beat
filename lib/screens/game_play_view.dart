@@ -11,7 +11,7 @@ import '../models/effect_model.dart';
 import '../providers/user_provider.dart';
 import '../providers/settings_provider.dart';
 import '../utils/app_texts.dart';
-import '../game/rhythm_game_world.dart'; // 위에서 만든 파일 임포트
+import '../game/rhythm_game_world.dart';
 
 class GamePlayView extends StatefulWidget {
   const GamePlayView({super.key});
@@ -20,7 +20,7 @@ class GamePlayView extends StatefulWidget {
   State<GamePlayView> createState() => _GamePlayViewState();
 }
 
-class _GamePlayViewState extends State<GamePlayView> {
+class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver {
   late final AudioPlayer _audioPlayer;
   late final AudioPlayer _sfxPlayer;
   late final Stopwatch _stopwatch;
@@ -62,10 +62,22 @@ class _GamePlayViewState extends State<GamePlayView> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _audioPlayer = AudioPlayer();
     _sfxPlayer = AudioPlayer(playerId: 'hit_sfx')
       ..setPlayerMode(PlayerMode.lowLatency);
     _stopwatch = Stopwatch();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // 앱이 백그라운드로 내려갈 때 (홈 버튼 등) 자동으로 일시정지
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      if (_isPlaying && !_isPaused && !_gameEnded) {
+        _pauseGame();
+      }
+    }
   }
 
   @override
@@ -116,6 +128,10 @@ class _GamePlayViewState extends State<GamePlayView> {
       await userProvider.setLastPlayedStage(_stageData?.stageNumber ?? 1);
     }
 
+    // 📌 화면이 열린 후 1초(1000ms) 동안 여유를 준 뒤 음악과 게임을 시작합니다.
+    await Future.delayed(const Duration(milliseconds: 1000));
+    if (!mounted || _isPaused || _gameEnded) return;
+
     try {
       await _audioPlayer.setVolume(settingsProvider.bgmVolume);
       await _sfxPlayer.setVolume(settingsProvider.sfxVolume);
@@ -128,7 +144,6 @@ class _GamePlayViewState extends State<GamePlayView> {
     _stopwatch.reset();
     _stopwatch.start();
 
-    // 주기적으로 게임 상태 검사 (미스 판정 및 종료 체크)
     Timer.periodic(const Duration(milliseconds: 16), (timer) {
       if (!_isPlaying || _isPaused || _gameEnded) {
         if (_gameEnded) timer.cancel();
@@ -308,12 +323,25 @@ class _GamePlayViewState extends State<GamePlayView> {
     _stopwatch.stop();
     _audioPlayer.pause();
 
+    // 📌 PauseOverlay 호출 부분 수정
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => PauseOverlay(
-        onPause: () {},
-        onResume: _resumeGame,
+        onPause: () {
+          // 일시정지 시 음악 멈춤
+          _audioPlayer.pause();
+        },
+        onResume: () {
+          // 카운트다운 끝난 후 이어서 재생 (`_resumeGame` 메서드 활용)
+          _resumeGame();
+        },
+        onRetry: () {
+          // 다시하기 시 음악을 처음으로 돌리고 게임을 처음부터 재시작
+          _audioPlayer.stop();
+          _initGameWorld(); // 게임 월드(노트 데이터) 재생성
+          _startGame();     // 게임 상태 초기화 및 음악 처음부터 재생
+        },
       ),
     );
   }
@@ -327,6 +355,7 @@ class _GamePlayViewState extends State<GamePlayView> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _judgeClearTimer?.cancel();
     _stopwatch.stop();
     _audioPlayer.dispose();
@@ -337,128 +366,130 @@ class _GamePlayViewState extends State<GamePlayView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF111111),
-      body: SafeArea(
-        child: KeyboardListener(
-          focusNode: _focusNode,
-          autofocus: true,
-          onKeyEvent: (event) {
-            for (int i = 0; i < _keyCodes.length; i++) {
-              if (event.logicalKey == _keyCodes[i]) {
-                if (event is KeyDownEvent) {
-                  if (!_keyActive[i]) _handleKeyPress(i);
-                } else if (event is KeyUpEvent) {
-                  _handleKeyRelease(i);
+    // 📌 PopScope를 통해 뒤로가기 버튼이나 제스처로 게임이 바로 닫히지 않고 일시정지창이 뜨도록 제어
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _pauseGame();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF111111),
+        body: SafeArea(
+          child: KeyboardListener(
+            focusNode: _focusNode,
+            autofocus: true,
+            onKeyEvent: (event) {
+              for (int i = 0; i < _keyCodes.length; i++) {
+                if (event.logicalKey == _keyCodes[i]) {
+                  if (event is KeyDownEvent) {
+                    if (!_keyActive[i]) _handleKeyPress(i);
+                  } else if (event is KeyUpEvent) {
+                    _handleKeyRelease(i);
+                  }
                 }
               }
-            }
-          },
-          child: Column(
-            children: [
-              _buildTopUI(),
-              Expanded(
-                child: Stack(
-                  children: [
-                    // 배경 레인 구조
-                    Positioned.fill(
-                      child: Row(
-                        children: List.generate(4, (index) {
-                          return Expanded(
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTapDown: (_) => _handleKeyPress(index),
-                              onTapUp: (_) => _handleKeyRelease(index),
-                              onTapCancel: () => _handleKeyRelease(index),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: _keyActive[index]
-                                      ? Colors.white.withValues(alpha: 0.08)
-                                      : (index % 2 == 0
-                                      ? const Color(0xFF14141E)
-                                      : const Color(0xFF1A1A26)),
-                                  border: Border(
-                                    right: BorderSide(
-                                      color: index < 3 ? Colors.white12 : Colors.transparent,
-                                      width: 1,
+            },
+            child: Column(
+              children: [
+                _buildTopUI(),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Row(
+                          children: List.generate(4, (index) {
+                            return Expanded(
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTapDown: (_) => _handleKeyPress(index),
+                                onTapUp: (_) => _handleKeyRelease(index),
+                                onTapCancel: () => _handleKeyRelease(index),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: _keyActive[index]
+                                        ? Colors.white.withValues(alpha: 0.08)
+                                        : (index % 2 == 0
+                                        ? const Color(0xFF14141E)
+                                        : const Color(0xFF1A1A26)),
+                                    border: Border(
+                                      right: BorderSide(
+                                        color: index < 3 ? Colors.white12 : Colors.transparent,
+                                        width: 1,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
+                            );
+                          }),
+                        ),
+                      ),
+                      if (_gameWorld != null)
+                        Positioned.fill(
+                          child: GameWidget(game: _gameWorld!),
+                        ),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 80,
+                        child: IgnorePointer(
+                          child: Container(
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFFA65),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFFFFA65).withValues(alpha: 0.8),
+                                  blurRadius: 15,
+                                  spreadRadius: 2,
+                                ),
+                              ],
                             ),
-                          );
-                        }),
+                          ),
+                        ),
                       ),
-                    ),
-
-                    // Flame 엔진의 GameWidget을 통한 고속 노트 렌더링
-                    if (_gameWorld != null)
-                      Positioned.fill(
-                        child: GameWidget(game: _gameWorld!),
-                      ),
-
-                    // 판정선 가이드 및 라인
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 80,
-                      child: IgnorePointer(
-                        child: Container(
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFFA65),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFFFFFA65).withValues(alpha: 0.8),
-                                blurRadius: 15,
-                                spreadRadius: 2,
-                              ),
+                      Positioned(
+                        top: 100,
+                        left: 0,
+                        right: 0,
+                        child: IgnorePointer(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (_currentJudge.isNotEmpty)
+                                Text(
+                                  _currentJudge,
+                                  style: TextStyle(
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w900,
+                                    color: _judgeColor,
+                                    shadows: [
+                                      Shadow(color: _judgeColor.withValues(alpha: 0.8), blurRadius: 16),
+                                    ],
+                                  ),
+                                ),
+                              const SizedBox(height: 6),
+                              if (_combo > 1)
+                                Text(
+                                  '$_combo COMBO',
+                                  style: const TextStyle(
+                                    fontSize: 34,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFFFFA502),
+                                  ),
+                                ),
                             ],
                           ),
                         ),
                       ),
-                    ),
-
-                    // 판정 및 콤보 텍스트 오버레이
-                    Positioned(
-                      top: 100,
-                      left: 0,
-                      right: 0,
-                      child: IgnorePointer(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (_currentJudge.isNotEmpty)
-                              Text(
-                                _currentJudge,
-                                style: TextStyle(
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.w900,
-                                  color: _judgeColor,
-                                  shadows: [
-                                    Shadow(color: _judgeColor.withValues(alpha: 0.8), blurRadius: 16),
-                                  ],
-                                ),
-                              ),
-                            const SizedBox(height: 6),
-                            if (_combo > 1)
-                              Text(
-                                '$_combo COMBO',
-                                style: const TextStyle(
-                                  fontSize: 34,
-                                  fontWeight: FontWeight.w900,
-                                  color: Color(0xFFFFA502),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              _buildKeyGuide(),
-            ],
+                _buildKeyGuide(),
+              ],
+            ),
           ),
         ),
       ),

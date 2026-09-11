@@ -121,46 +121,65 @@ class _ResultViewState extends State<ResultView> {
               ),
               const SizedBox(height: 24),
 
-              // 랭크 배지 & 스코어
-              Container(
-                width: 110,
-                height: 110,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: rankColor.withValues(alpha: 0.15),
-                  border: Border.all(color: rankColor, width: 3.5),
-                  boxShadow: [
-                    BoxShadow(
-                      color: rankColor.withValues(alpha: 0.4),
-                      blurRadius: 18,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Text(
-                    rank,
-                    style: TextStyle(
-                      fontSize: 60,
-                      fontWeight: FontWeight.w900,
-                      color: rankColor,
+              // 랭크 배지 & 스코어 (가로 배치)
+              // 랭크 배지 & 스코어 (간격 및 정렬 조정)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween, // 양 끝으로 배치하여 여백 확보
+                children: [
+                  // 📌 랭크 배지 (왼쪽에 여백을 주기 위해 Padding 추가)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 12.0),
+                    child: Container(
+                      width: 90,
+                      height: 90,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: rankColor.withValues(alpha: 0.15),
+                        border: Border.all(color: rankColor, width: 3.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: rankColor.withValues(alpha: 0.4),
+                            blurRadius: 18,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          rank,
+                          style: TextStyle(
+                            fontSize: 50,
+                            fontWeight: FontWeight.w900,
+                            color: rankColor,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              Text(
-                '$score',
-                style: const TextStyle(
-                  fontSize: 42,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 3,
-                  color: Colors.white,
-                ),
-              ),
-              Text(
-                AppTexts.get('score'),
-                style: const TextStyle(fontSize: 13, color: Colors.white54, letterSpacing: 1),
+                  // 📌 스코어 영역 (오른쪽 정렬)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end, // 오른쪽 정렬
+                      children: [
+                        Text(
+                          '$score',
+                          style: const TextStyle(
+                            fontSize: 38,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 2,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          AppTexts.get('score'),
+                          style: const TextStyle(fontSize: 13, color: Colors.white54, letterSpacing: 1),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 20),
 

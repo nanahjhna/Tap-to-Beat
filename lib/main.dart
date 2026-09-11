@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
+import 'package:upgrader/upgrader.dart';
 
 import 'providers/user_provider.dart';
 import 'providers/settings_provider.dart';
@@ -73,6 +74,14 @@ class TapToBeatGameApp extends StatelessWidget {
           ),
         ),
       ),
+      // 📌 2. builder 속성을 추가하여 앱 전체에서 UpgradeAlert이 작동하도록 설정
+      builder: (context, child) {
+        return UpgradeAlert(
+          dialogStyle: UpgradeDialogStyle.material,
+          upgrader: Upgrader(),
+          child: child ?? const SizedBox(),
+        );
+      },
       initialRoute: '/loading',
       routes: {
         '/': (context) => const TitleView(),

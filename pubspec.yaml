@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+15
+version: 1.0.0+16
 
 environment:
   sdk: ^3.12.2
@@ -43,6 +43,7 @@ dependencies:
   package_info_plus: ^8.1.2 # 최신 버전 확인 권장
   in_app_update: ^5.0.0 # Play스토어 빌드번호 기반 강제 업데이트
   flame: ^1.18.0
+  upgrader: ^11.4.0 # 최신 버전 확인 후 적용
 
 dev_dependencies:
   flutter_test:
