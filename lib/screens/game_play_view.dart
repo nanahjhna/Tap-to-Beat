@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/scheduler.dart';
+import 'package:flame/game.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:provider/provider.dart';
 import 'pause_overlay.dart';
@@ -11,20 +11,7 @@ import '../models/effect_model.dart';
 import '../providers/user_provider.dart';
 import '../providers/settings_provider.dart';
 import '../utils/app_texts.dart';
-
-class RhythmNote {
-  final int id;
-  final int track; // 0..3 (D, F, J, K)
-  final double targetTimeMs;
-  bool isHit = false;
-  bool isMissed = false;
-
-  RhythmNote({
-    required this.id,
-    required this.track,
-    required this.targetTimeMs,
-  });
-}
+import '../game/rhythm_game_world.dart'; // 위에서 만든 파일 임포트
 
 class GamePlayView extends StatefulWidget {
   const GamePlayView({super.key});
@@ -33,14 +20,11 @@ class GamePlayView extends StatefulWidget {
   State<GamePlayView> createState() => _GamePlayViewState();
 }
 
-class _GamePlayViewState extends State<GamePlayView>
-    with SingleTickerProviderStateMixin {
+class _GamePlayViewState extends State<GamePlayView> {
   late final AudioPlayer _audioPlayer;
   late final AudioPlayer _sfxPlayer;
   late final Stopwatch _stopwatch;
-  late final Ticker _ticker;
 
-  final List<RhythmNote> _notes = [];
   final List<bool> _keyActive = [false, false, false, false];
 
   int _score = 0;
@@ -69,34 +53,19 @@ class _GamePlayViewState extends State<GamePlayView>
   static const List<String> _keyLabels = ['D', 'F', 'J', 'K'];
 
   StageModel? _stageData;
+  RhythmGameWorld? _gameWorld;
   final FocusNode _focusNode = FocusNode();
 
   String get _difficulty => _stageData?.difficulty ?? 'NORMAL';
-  double get _fallDurationMs =>
-      StageGenerator.playValue(_difficulty, 'fallMs');
+  double get _fallDurationMs => StageGenerator.playValue(_difficulty, 'fallMs');
 
   @override
   void initState() {
     super.initState();
     _audioPlayer = AudioPlayer();
-    // 타격음은 짧은 틱이라 저지연 모드 + 믹싱 유지 (BGM과 겹쳐 재생)
     _sfxPlayer = AudioPlayer(playerId: 'hit_sfx')
-      ..setPlayerMode(PlayerMode.lowLatency)
-      ..setAudioContext(AudioContext(
-        android: AudioContextAndroid(
-          isSpeakerphoneOn: true,
-          stayAwake: true,
-          contentType: AndroidContentType.sonification,
-          usageType: AndroidUsageType.game,
-          audioFocus: AndroidAudioFocus.gainTransientMayDuck,
-        ),
-        iOS: AudioContextIOS(
-          category: AVAudioSessionCategory.playback,
-          options: {AVAudioSessionOptions.mixWithOthers},
-        ),
-      ));
+      ..setPlayerMode(PlayerMode.lowLatency);
     _stopwatch = Stopwatch();
-    _ticker = createTicker(_onTick);
   }
 
   @override
@@ -108,29 +77,23 @@ class _GamePlayViewState extends State<GamePlayView>
       String difficulty = 'NORMAL';
       if (args is Map) {
         stageNum = args['stage'] as int? ?? 1;
-        difficulty = StageGenerator.normalizeDifficulty(
-            args['difficulty'] as String?);
+        difficulty = StageGenerator.normalizeDifficulty(args['difficulty'] as String?);
       } else if (args is int) {
         stageNum = args;
       }
-      _stageData =
-          StageGenerator.generateStage(stageNum, difficulty: difficulty);
-      _initGame();
+      _stageData = StageGenerator.generateStage(stageNum, difficulty: difficulty);
+      _initGameWorld();
+      _startGame();
     }
   }
 
-  void _initGame() {
-    _notes.clear();
-    final noteDataList = _stageData?.notes ?? const <NoteData>[];
-    int id = 0;
-    for (final n in noteDataList) {
-      _notes.add(RhythmNote(
-        id: id++,
-        track: n.lane,
-        targetTimeMs: n.timeMs.toDouble(),
-      ));
-    }
-    _startGame();
+  void _initGameWorld() {
+    _gameWorld = RhythmGameWorld(
+      stageData: _stageData!,
+      fallDurationMs: _fallDurationMs,
+      getEffectiveMs: _effectiveMs,
+      noteColor: _notesColor(),
+    );
   }
 
   Future<void> _startGame() async {
@@ -146,38 +109,47 @@ class _GamePlayViewState extends State<GamePlayView>
     _isPaused = false;
     _gameEnded = false;
 
-    // 최근 플레이 곡 업데이트
     final userProvider = context.read<UserProvider>();
     final settingsProvider = context.read<SettingsProvider>();
-    final bgmVolume = settingsProvider.bgmVolume;
-    final sfxVolume = settingsProvider.sfxVolume;
+
     if (mounted) {
       await userProvider.setLastPlayedStage(_stageData?.stageNumber ?? 1);
     }
 
     try {
-      await _audioPlayer.setVolume(bgmVolume);
-      await _sfxPlayer.setVolume(sfxVolume);
+      await _audioPlayer.setVolume(settingsProvider.bgmVolume);
+      await _sfxPlayer.setVolume(settingsProvider.sfxVolume);
       final soundPath = _stageData?.audioPath ?? 'sounds/basicmusic/MikoshiMayhem.mp3';
       await _audioPlayer.play(AssetSource(soundPath));
     } catch (e) {
-      debugPrint('Audio playback error (fallback to internal timer): $e');
+      debugPrint('Audio playback error: $e');
     }
 
     _stopwatch.reset();
     _stopwatch.start();
-    _ticker.start();
+
+    // 주기적으로 게임 상태 검사 (미스 판정 및 종료 체크)
+    Timer.periodic(const Duration(milliseconds: 16), (timer) {
+      if (!_isPlaying || _isPaused || _gameEnded) {
+        if (_gameEnded) timer.cancel();
+        return;
+      }
+      _checkGameTick();
+    });
   }
 
-  void _onTick(Duration elapsed) {
-    if (!_isPlaying || _isPaused || _gameEnded) return;
+  double _effectiveMs() {
+    final offset = context.read<SettingsProvider>().timingOffset;
+    return _stopwatch.elapsedMilliseconds.toDouble() - offset;
+  }
 
+  void _checkGameTick() {
+    if (_gameWorld == null) return;
     final currentMs = _stopwatch.elapsedMilliseconds.toDouble();
     final judgeMs = _effectiveMs();
-
-    // 판정선 지나침 (Miss) 검사 — 난이도별 유예 적용
     final missGraceMs = StageGenerator.playValue(_difficulty, 'missGraceMs');
-    for (final note in _notes) {
+
+    for (final note in _gameWorld!.noteComponents) {
       if (!note.isHit && !note.isMissed) {
         if (judgeMs > note.targetTimeMs + missGraceMs) {
           note.isMissed = true;
@@ -186,70 +158,46 @@ class _GamePlayViewState extends State<GamePlayView>
       }
     }
 
-    // 게임 종료 검사 (라이프 0 또는 곡 완료)
-    final allProcessed = _notes.every((n) => n.isHit || n.isMissed);
+    final allProcessed = _gameWorld!.noteComponents.every((n) => n.isHit || n.isMissed);
     final isFinished = allProcessed &&
-        (currentMs > (_notes.isNotEmpty ? _notes.last.targetTimeMs + 1500 : 3000));
+        (currentMs > (_gameWorld!.noteComponents.isNotEmpty ? _gameWorld!.noteComponents.last.targetTimeMs + 1500 : 3000));
 
     if (_life <= 0 || isFinished) {
       _finishGame(_life > 0);
-      return;
     }
-
-    setState(() {});
-  }
-
-  void _handleKeyPress(int trackIdx) {
-    if (!_isPlaying || _isPaused || _gameEnded) return;
-
-    setState(() {
-      _keyActive[trackIdx] = true;
-    });
-
-    _judgeTrack(trackIdx);
-  }
-
-  void _handleKeyRelease(int trackIdx) {
-    if (mounted) {
-      setState(() {
-        _keyActive[trackIdx] = false;
-      });
-    }
-  }
-
-  double _effectiveMs() {
-    final offset = context.read<SettingsProvider>().timingOffset;
-    return _stopwatch.elapsedMilliseconds.toDouble() - offset;
-  }
-
-  void _playSfx() {
-    try {
-      // 짧은 틱이라 stop() 없이 겹쳐 재생 (연타 끊김 해소)
-      _sfxPlayer.play(AssetSource('sounds/hit.wav'), mode: PlayerMode.lowLatency);
-    } catch (_) {}
   }
 
   Color _notesColor() {
     final userProvider = context.read<UserProvider>();
     const defaultColor = Color(0xFF2ED573);
-    // 장착된 노트 스킨 우선 적용
     for (final skin in ShopData.noteSkins) {
       if (userProvider.isEffectEquipped(skin.id)) return skin.color;
     }
-    // 스킨 없으면 장착된 이펙트 색 반영
     for (final effect in ShopData.effects) {
       if (userProvider.isEffectEquipped(effect.id)) return effect.color;
     }
     return defaultColor;
   }
 
+  void _handleKeyPress(int trackIdx) {
+    if (!_isPlaying || _isPaused || _gameEnded) return;
+
+    setState(() => _keyActive[trackIdx] = true);
+    _judgeTrack(trackIdx);
+  }
+
+  void _handleKeyRelease(int trackIdx) {
+    if (mounted) setState(() => _keyActive[trackIdx] = false);
+  }
+
   void _judgeTrack(int trackIdx) {
+    if (_gameWorld == null) return;
     final currentMs = _effectiveMs();
 
-    RhythmNote? targetNote;
+    RhythmNoteComponent? targetNote;
     double minDiff = double.infinity;
 
-    for (final note in _notes) {
+    for (final note in _gameWorld!.noteComponents) {
       if (note.track == trackIdx && !note.isHit && !note.isMissed) {
         final diff = (currentMs - note.targetTimeMs).abs();
         if (diff < minDiff) {
@@ -259,12 +207,12 @@ class _GamePlayViewState extends State<GamePlayView>
       }
     }
 
-    // 판정 범위: 난이도별 BAD폭 이내
     final perfectMs = StageGenerator.playValue(_difficulty, 'perfectMs');
     final goodMs = StageGenerator.playValue(_difficulty, 'goodMs');
     final badMs = StageGenerator.playValue(_difficulty, 'badMs');
     final healPerfect = StageGenerator.playValue(_difficulty, 'healPerfect');
     final healGood = StageGenerator.playValue(_difficulty, 'healGood');
+
     if (targetNote != null && minDiff <= badMs) {
       targetNote.isHit = true;
 
@@ -291,11 +239,15 @@ class _GamePlayViewState extends State<GamePlayView>
     }
   }
 
+  void _playSfx() {
+    try {
+      _sfxPlayer.play(AssetSource('sounds/hit.wav'), mode: PlayerMode.lowLatency);
+    } catch (_) {}
+  }
+
   void _addCombo() {
     _combo++;
-    if (_combo > _maxCombo) {
-      _maxCombo = _combo;
-    }
+    if (_combo > _maxCombo) _maxCombo = _combo;
   }
 
   void _handleMiss({bool isBad = false}) {
@@ -318,9 +270,7 @@ class _GamePlayViewState extends State<GamePlayView>
     _judgeClearTimer?.cancel();
     _judgeClearTimer = Timer(const Duration(milliseconds: 350), () {
       if (mounted && _currentJudge == text) {
-        setState(() {
-          _currentJudge = '';
-        });
+        setState(() => _currentJudge = '');
       }
     });
   }
@@ -329,7 +279,6 @@ class _GamePlayViewState extends State<GamePlayView>
     if (_gameEnded) return;
     _gameEnded = true;
     _isPlaying = false;
-    _ticker.stop();
     _stopwatch.stop();
     _audioPlayer.stop();
 
@@ -346,7 +295,7 @@ class _GamePlayViewState extends State<GamePlayView>
         'good': _countGood,
         'bad': _countBad,
         'miss': _countMiss,
-        'totalNotes': _notes.length,
+        'totalNotes': _gameWorld?.noteComponents.length ?? 0,
         'songTitle': _stageData?.title ?? 'Mikoshi Mayhem',
         'songArtist': _stageData?.artist ?? 'Matsuri Beats',
       },
@@ -356,7 +305,6 @@ class _GamePlayViewState extends State<GamePlayView>
   void _pauseGame() {
     if (_isPaused || !_isPlaying) return;
     setState(() => _isPaused = true);
-    _ticker.stop();
     _stopwatch.stop();
     _audioPlayer.pause();
 
@@ -375,13 +323,11 @@ class _GamePlayViewState extends State<GamePlayView>
     setState(() => _isPaused = false);
     _audioPlayer.resume();
     _stopwatch.start();
-    _ticker.start();
   }
 
   @override
   void dispose() {
     _judgeClearTimer?.cancel();
-    _ticker.dispose();
     _stopwatch.stop();
     _audioPlayer.dispose();
     _sfxPlayer.dispose();
@@ -412,169 +358,105 @@ class _GamePlayViewState extends State<GamePlayView>
             children: [
               _buildTopUI(),
               Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final boardHeight = constraints.maxHeight;
-                    const judgeLineFromBottom = 80.0;
-                    final judgeLineY = boardHeight - judgeLineFromBottom;
-                    final currentMs = _stopwatch.elapsedMilliseconds.toDouble();
-
-                    return Stack(
-                      children: [
-                        // 4 레인 배경 및 탭 감지
-                        Positioned.fill(
-                          child: Row(
-                            children: List.generate(4, (index) {
-                              return Expanded(
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTapDown: (_) => _handleKeyPress(index),
-                                  onTapUp: (_) => _handleKeyRelease(index),
-                                  onTapCancel: () => _handleKeyRelease(index),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: _keyActive[index]
-                                          ? Colors.white.withValues(alpha: 0.08)
-                                          : (index % 2 == 0
-                                              ? const Color(0xFF14141E)
-                                              : const Color(0xFF1A1A26)),
-                                      border: Border(
-                                        right: BorderSide(
-                                          color: index < 3
-                                              ? Colors.white12
-                                              : Colors.transparent,
-                                          width: 1,
-                                        ),
-                                      ),
+                child: Stack(
+                  children: [
+                    // 배경 레인 구조
+                    Positioned.fill(
+                      child: Row(
+                        children: List.generate(4, (index) {
+                          return Expanded(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTapDown: (_) => _handleKeyPress(index),
+                              onTapUp: (_) => _handleKeyRelease(index),
+                              onTapCancel: () => _handleKeyRelease(index),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: _keyActive[index]
+                                      ? Colors.white.withValues(alpha: 0.08)
+                                      : (index % 2 == 0
+                                      ? const Color(0xFF14141E)
+                                      : const Color(0xFF1A1A26)),
+                                  border: Border(
+                                    right: BorderSide(
+                                      color: index < 3 ? Colors.white12 : Colors.transparent,
+                                      width: 1,
                                     ),
                                   ),
                                 ),
-                              );
-                            }),
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+
+                    // Flame 엔진의 GameWidget을 통한 고속 노트 렌더링
+                    if (_gameWorld != null)
+                      Positioned.fill(
+                        child: GameWidget(game: _gameWorld!),
+                      ),
+
+                    // 판정선 가이드 및 라인
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 80,
+                      child: IgnorePointer(
+                        child: Container(
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFFA65),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFFFA65).withValues(alpha: 0.8),
+                                blurRadius: 15,
+                                spreadRadius: 2,
+                              ),
+                            ],
                           ),
                         ),
+                      ),
+                    ),
 
-                        // 판정선 가이드 글로우 존
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 40,
-                          height: 80,
-                          child: IgnorePointer(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.bottomCenter,
-                                  end: Alignment.topCenter,
-                                  colors: [
-                                    const Color(0xFFFFFA65).withValues(alpha: 0.15),
-                                    Colors.transparent,
+                    // 판정 및 콤보 텍스트 오버레이
+                    Positioned(
+                      top: 100,
+                      left: 0,
+                      right: 0,
+                      child: IgnorePointer(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (_currentJudge.isNotEmpty)
+                              Text(
+                                _currentJudge,
+                                style: TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w900,
+                                  color: _judgeColor,
+                                  shadows: [
+                                    Shadow(color: _judgeColor.withValues(alpha: 0.8), blurRadius: 16),
                                   ],
                                 ),
                               ),
-                            ),
-                          ),
-                        ),
-
-                        // 판정선 (Judge Line)
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: judgeLineFromBottom,
-                          child: IgnorePointer(
-                            child: Container(
-                              height: 6,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFFA65),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFFFFFA65).withValues(alpha: 0.8),
-                                    blurRadius: 15,
-                                    spreadRadius: 2,
-                                  ),
-                                  BoxShadow(
-                                    color: const Color(0xFFFF5252).withValues(alpha: 0.6),
-                                    blurRadius: 6,
-                                  ),
-                                ],
+                            const SizedBox(height: 6),
+                            if (_combo > 1)
+                              Text(
+                                '$_combo COMBO',
+                                style: const TextStyle(
+                                  fontSize: 34,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFFFFA502),
+                                ),
                               ),
-                            ),
-                          ),
+                          ],
                         ),
-
-                        // 떨어지는 노트 렌더링
-                        ..._buildVisibleNotes(
-                          constraints.maxWidth,
-                          judgeLineY,
-                          currentMs,
-                          _notesColor(),
-                        ),
-
-                        // 판정 및 콤보 이펙트 표시 영역
-                        Positioned(
-                          top: boardHeight * 0.32,
-                          left: 0,
-                          right: 0,
-                          child: IgnorePointer(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (_currentJudge.isNotEmpty)
-                                  AnimatedScale(
-                                    scale: 1.1,
-                                    duration: const Duration(milliseconds: 100),
-                                    child: Text(
-                                      _currentJudge,
-                                      style: TextStyle(
-                                        fontSize: 26,
-                                        fontWeight: FontWeight.w900,
-                                        color: _judgeColor,
-                                        letterSpacing: 2,
-                                        shadows: [
-                                          Shadow(
-                                            color: _judgeColor.withValues(alpha: 0.8),
-                                            blurRadius: 16,
-                                          ),
-                                          const Shadow(
-                                            color: Colors.black,
-                                            blurRadius: 8,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                const SizedBox(height: 6),
-                                if (_combo > 1)
-                                  Text(
-                                    '$_combo COMBO',
-                                    style: const TextStyle(
-                                      fontSize: 34,
-                                      fontWeight: FontWeight.w900,
-                                      color: Color(0xFFFFA502),
-                                      letterSpacing: 1.5,
-                                      shadows: [
-                                        Shadow(
-                                          color: Colors.black,
-                                          blurRadius: 10,
-                                        ),
-                                        Shadow(
-                                          color: Color(0xFFFF8B00),
-                                          blurRadius: 12,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+                      ),
+                    ),
+                  ],
                 ),
               ),
-
-              // 하단 4버튼 키 가이드 (D, F, J, K)
               _buildKeyGuide(),
             ],
           ),
@@ -600,44 +482,21 @@ class _GamePlayViewState extends State<GamePlayView>
                 children: [
                   Text(
                     _stageData?.title ?? 'Mikoshi Mayhem',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFFFD166),
-                    ),
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFFFFD166)),
                   ),
                   Text(
                     '${AppTexts.get('score')}: $_score',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                    ),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white),
                   ),
                 ],
               ),
-              Row(
-                children: [
-                  Text(
-                    '${AppTexts.get('maxCombo')}: $_maxCombo',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white70,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  IconButton(
-                    icon: const Icon(Icons.pause_circle_filled,
-                        color: Colors.white, size: 28),
-                    onPressed: _pauseGame,
-                  ),
-                ],
+              IconButton(
+                icon: const Icon(Icons.pause_circle_filled, color: Colors.white, size: 28),
+                onPressed: _pauseGame,
               ),
             ],
           ),
           const SizedBox(height: 8),
-          // 라이프 게이지 바
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
             child: Container(
@@ -647,68 +506,13 @@ class _GamePlayViewState extends State<GamePlayView>
               child: FractionallySizedBox(
                 alignment: Alignment.centerLeft,
                 widthFactor: (_life / 100.0).clamp(0.0, 1.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: _life > 30
-                          ? [const Color(0xFFFF4757), const Color(0xFFFF6B81)]
-                          : [Colors.redAccent, Colors.deepOrange],
-                    ),
-                  ),
-                ),
+                child: Container(color: const Color(0xFFFF4757)),
               ),
             ),
           ),
         ],
       ),
     );
-  }
-
-  List<Widget> _buildVisibleNotes(
-    double boardWidth,
-    double judgeLineY,
-    double currentMs,
-    Color noteColor,
-  ) {
-    final trackWidth = boardWidth / 4.0;
-    final widgets = <Widget>[];
-
-    for (final note in _notes) {
-      if (note.isHit || note.isMissed) continue;
-
-      final noteStartTime = note.targetTimeMs - _fallDurationMs;
-      final progress = (currentMs - noteStartTime) / _fallDurationMs;
-
-      // 아직 화면 밖이거나 이미 판정선을 훌쩍 넘긴 경우 생략
-      if (progress < -0.2 || progress > 1.3) continue;
-
-      final currentY = progress * judgeLineY;
-      final x = note.track * trackWidth;
-
-      widgets.add(
-        Positioned(
-          top: currentY,
-          left: x + 4,
-          width: trackWidth - 8,
-          height: 18,
-          child: Container(
-            decoration: BoxDecoration(
-              color: noteColor,
-              borderRadius: BorderRadius.circular(4),
-              boxShadow: [
-                BoxShadow(
-                  color: noteColor.withValues(alpha: 0.7),
-                  blurRadius: 8,
-                  spreadRadius: 1,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    return widgets;
   }
 
   Widget _buildKeyGuide() {
@@ -726,20 +530,11 @@ class _GamePlayViewState extends State<GamePlayView>
               onTapCancel: () => _handleKeyRelease(index),
               child: Container(
                 decoration: BoxDecoration(
-                  color: isActive
-                      ? Colors.white.withValues(alpha: 0.28)
-                      : Colors.transparent,
+                  color: isActive ? Colors.white.withValues(alpha: 0.28) : Colors.transparent,
                   border: Border(
                     top: BorderSide(
-                      color: isActive
-                          ? const Color(0xFFFFFA65)
-                          : const Color(0xFF444444),
+                      color: isActive ? const Color(0xFFFFFA65) : const Color(0xFF444444),
                       width: 2.5,
-                    ),
-                    right: BorderSide(
-                      color: index < 3
-                          ? const Color(0xFF333333)
-                          : Colors.transparent,
                     ),
                   ),
                 ),
