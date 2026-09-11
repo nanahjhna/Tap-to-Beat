@@ -5,7 +5,6 @@ import '../widgets/game_bottom_navigation.dart';
 import '../utils/app_texts.dart';
 import '../services/stage_generator.dart';
 import '../models/stage_model.dart';
-import '../widgets/ad_banner_widget.dart';
 
 class StageSelectView extends StatefulWidget {
   const StageSelectView({super.key});
@@ -208,11 +207,11 @@ class _StageSelectViewState extends State<StageSelectView> {
         centerTitle: true,
       ),
       bottomNavigationBar: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            GameBottomNavigation(currentIndex: 0),
-          ],
-        ),
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GameBottomNavigation(currentIndex: 0),
+        ],
+      ),
       body: Column(
         children: [
           // 가로 스와이프 PageView
@@ -225,7 +224,7 @@ class _StageSelectViewState extends State<StageSelectView> {
               },
               itemBuilder: (context, index) {
                 final stage = stages[index];
-                final isOwned = userProvider.ownsSong('stage_${stage.stageNumber}');
+                final isOwned = userProvider.isStageOwned(stage.stageNumber, stageTitle: stage.title);
                 final diffColor = _getDifficultyColor(stage.difficulty);
 
                 return AnimatedScale(

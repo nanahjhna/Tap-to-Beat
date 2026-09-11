@@ -258,7 +258,7 @@ class _SettingsViewState extends State<SettingsView> {
         mainAxisSize: MainAxisSize.min,
         children: [
           _getVersionString(context),
-          const GameBottomNavigation(currentIndex: 4),
+          const GameBottomNavigation(currentIndex: 3),
         ],
       ),
     );

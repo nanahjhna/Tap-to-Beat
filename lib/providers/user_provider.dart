@@ -26,6 +26,30 @@ class UserProvider extends ChangeNotifier {
   bool isSongEquipped(String itemId) => _equippedSongs.contains(itemId);
   bool isEffectEquipped(String itemId) => _equippedEffects.contains(itemId);
 
+  // ── 곡/스테이지 보유 통합 판정 메서드 (여기에 추가됨) ──
+  bool isStageOwned(int stageNumber, {String? stageTitle}) {
+    // 1번 스테이지는 기본 무료 곡이므로 항상 보유한 것으로 처리
+    if (stageNumber == 1) {
+      return true;
+    }
+
+    // 1) 기본 스테이지 ID 판정 (예: stage_1, stage_2 ...)
+    if (_ownedSongs.contains('stage_$stageNumber')) {
+      return true;
+    }
+
+    // 2) 소유한 곡 목록 중에서 상점 곡 이름이나 매칭되는 ID 검사
+    for (final ownedId in _ownedSongs) {
+      if (ownedId.startsWith('stage_')) continue;
+
+      if (stageTitle != null && ownedId.toLowerCase().contains(stageTitle.toLowerCase().replaceAll(' ', '_'))) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   Future<void> init() async {
     _userId = await _db.getOrCreateUser();
     _coins = await _db.getCoins(_userId);
@@ -145,16 +169,16 @@ class UserProvider extends ChangeNotifier {
   // ── 클리어 기록 ──
 
   Future<void> saveStageResult(
-    int stageId,
-    int score,
-    int maxCombo,
-    int perfect,
-    int good,
-    int bad,
-    int miss,
-    String rank,
-    bool cleared,
-  ) async {
+      int stageId,
+      int score,
+      int maxCombo,
+      int perfect,
+      int good,
+      int bad,
+      int miss,
+      String rank,
+      bool cleared,
+      ) async {
     await _db.saveStageResult(
       _userId, stageId, score, maxCombo,
       perfect, good, bad, miss, rank, cleared,
