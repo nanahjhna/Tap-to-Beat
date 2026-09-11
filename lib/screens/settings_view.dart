@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/user_session.dart';
 import '../widgets/game_bottom_navigation.dart';
-import '../widgets/game_header.dart';
 import '../utils/app_texts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -142,54 +141,6 @@ class _SettingsViewState extends State<SettingsView> {
           ),
           const SizedBox(height: 10),
 
-          // 판정 싱크 오프셋 (Timing Offset)
-          Card(
-            color: const Color(0xFF221F42),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: Colors.white12),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.tune_rounded, color: Color(0xFF1E90FF)),
-                          const SizedBox(width: 8),
-                          Text(AppTexts.get('timingSync'), style: const TextStyle(fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                      Text(
-                        '${settings.timingOffset > 0 ? '+' : ''}${settings.timingOffset.toInt()} ms',
-                        style: const TextStyle(color: Color(0xFF1E90FF), fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    AppTexts.get('timingSyncDesc'),
-                    style: const TextStyle(fontSize: 11, color: Colors.white60),
-                  ),
-                  Slider(
-                    value: settings.timingOffset,
-                    min: -100.0,
-                    max: 100.0,
-                    divisions: 40,
-                    activeColor: const Color(0xFF1E90FF),
-                    inactiveColor: Colors.white12,
-                    onChanged: (v) => settings.setTimingOffset(v),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
-
           // 게스트 전용: Google 계정으로 전환 섹션
           if (_provider == 'guest') ...[
             Card(
@@ -242,17 +193,12 @@ class _SettingsViewState extends State<SettingsView> {
             ),
             const SizedBox(height: 14),
           ],
-
-          // 동적 버전 표출부 (수정된 영역)
-          _getVersionString(context),
-          const SizedBox(height: 24),
         ],
       ),
     );
     return widget.embedded
         ? content
         : Scaffold(
-      appBar: const GameHeader(titleKey: 'settings'),
       body: content,
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,

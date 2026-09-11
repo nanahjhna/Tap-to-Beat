@@ -3,15 +3,27 @@ import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../utils/app_texts.dart';
 import '../services/stage_generator.dart';
+import '../screens/stage_select_view.dart';
 
 class LobbyTab extends StatefulWidget {
-  const LobbyTab({super.key});
+  const LobbyTab({super.key, this.currentTabIndex = 0});
+  final int currentTabIndex;
 
   @override
   State<LobbyTab> createState() => _LobbyTabState();
 }
 
 class _LobbyTabState extends State<LobbyTab> {
+  bool _showStageSelect = false;
+
+  @override
+  void didUpdateWidget(covariant LobbyTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.currentTabIndex != 0 && widget.currentTabIndex == 0 && _showStageSelect) {
+      setState(() => _showStageSelect = false);
+    }
+  }
+
   void _showLanguageDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -68,6 +80,44 @@ class _LobbyTabState extends State<LobbyTab> {
     final userProvider = context.watch<UserProvider>();
     final recentStage = StageGenerator.getStage(userProvider.lastPlayedStageId);
 
+    // 📌 '전체 트랙 선택'을 누르면 스테이지 선택 화면을 embedded 형식으로 출력
+    if (_showStageSelect) {
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) {
+            setState(() => _showStageSelect = false);
+          }
+        },
+        child: Scaffold(
+          backgroundColor: const Color(0xFF151329),
+          body: SafeArea(
+            child: Column(
+              children: [
+                // 뒤로가기 버튼이 포함된 상단바 또는 닫기 헤더 역할
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => setState(() => _showStageSelect = false),
+                      ),
+                      Text(
+                        AppTexts.get(''),
+                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+                const Expanded(child: StageSelectView(embedded: true)),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -96,13 +146,6 @@ class _LobbyTabState extends State<LobbyTab> {
                       children: [
                         _miniShortcut(
                           context,
-                          Icons.language,
-                          AppTexts.get('language'),
-                          onTap: () => _showLanguageDialog(context),
-                        ),
-                        const SizedBox(width: 8),
-                        _miniShortcut(
-                          context,
                           Icons.bolt,
                           AppTexts.get('quest'),
                           route: '/quest',
@@ -113,6 +156,13 @@ class _LobbyTabState extends State<LobbyTab> {
                           Icons.campaign,
                           AppTexts.get('notice'),
                           route: '/notice',
+                        ),
+                        const SizedBox(width: 8),
+                        _miniShortcut(
+                          context,
+                          Icons.language,
+                          AppTexts.get('language'),
+                          onTap: () => _showLanguageDialog(context),
                         ),
                       ],
                     ),
@@ -138,10 +188,6 @@ class _LobbyTabState extends State<LobbyTab> {
                         Text(
                           AppTexts.get('nowPlaying'),
                           style: const TextStyle(color: Color(0xFFFFD166), fontSize: 12, fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          'TapToBeat',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white),
                         ),
                       ],
                     ),
@@ -244,7 +290,7 @@ class _LobbyTabState extends State<LobbyTab> {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: () => Navigator.pushNamed(context, '/stageSelect'),
+                    onPressed: () => setState(() => _showStageSelect = true),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white,
                       side: const BorderSide(color: Color(0xFFFFD166), width: 1.5),

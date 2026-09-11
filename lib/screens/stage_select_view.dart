@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../widgets/game_bottom_navigation.dart';
+import '../widgets/game_header.dart';
 import '../utils/app_texts.dart';
 import '../services/stage_generator.dart';
 import '../models/stage_model.dart';
 
 class StageSelectView extends StatefulWidget {
-  const StageSelectView({super.key});
+  const StageSelectView({super.key, this.embedded = false});
+  final bool embedded;
 
   @override
   State<StageSelectView> createState() => _StageSelectViewState();
@@ -196,277 +198,275 @@ class _StageSelectViewState extends State<StageSelectView> {
     final stages = StageGenerator.allStages;
     final userProvider = context.watch<UserProvider>();
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF151329),
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Text(
-          AppTexts.get('selectStage'),
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+    final content = Column(
+      children: [
+        Expanded(
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: stages.length,
+            onPageChanged: (index) {
+              setState(() => _currentPage = index);
+            },
+            itemBuilder: (context, index) {
+              final stage = stages[index];
+              final isOwned = userProvider.isStageOwned(stage.stageNumber, stageTitle: stage.title);
+              final diffColor = _getDifficultyColor(stage.difficulty);
+
+              return AnimatedScale(
+                scale: _currentPage == index ? 1.0 : 0.9,
+                duration: const Duration(milliseconds: 200),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                  child: Card(
+                    color: const Color(0xFF201D3D),
+                    elevation: _currentPage == index ? 8 : 2,
+                    clipBehavior: Clip.antiAlias,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      side: BorderSide(
+                        color: isOwned
+                            ? diffColor.withValues(alpha: 0.5)
+                            : Colors.white12,
+                        width: _currentPage == index ? 2 : 1,
+                      ),
+                    ),
+                    child: Opacity(
+                      opacity: isOwned ? 1.0 : 0.5,
+                      child: InkWell(
+                        onTap: () => _onStageTap(context, stage, isOwned),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            return SingleChildScrollView(
+                              physics: const BouncingScrollPhysics(),
+                              padding: const EdgeInsets.all(16),
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(minHeight: constraints.maxHeight - 32),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      width: 75,
+                                      height: 75,
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            diffColor.withValues(alpha: 0.35),
+                                            const Color(0xFF141226),
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: diffColor.withValues(alpha: 0.5),
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: Stack(
+                                        alignment: Alignment.center,
+                                        children: [
+                                          Icon(
+                                            _getTrackIcon(stage.stageNumber),
+                                            size: 35,
+                                            color: diffColor,
+                                          ),
+                                          if (stage.rank != '-')
+                                            Positioned(
+                                              right: 6,
+                                              top: 6,
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFFFFD166),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: Text(
+                                                  stage.rank,
+                                                  style: const TextStyle(
+                                                    color: Colors.black,
+                                                    fontWeight: FontWeight.w900,
+                                                    fontSize: 10,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: diffColor.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(color: diffColor.withValues(alpha: 0.6), width: 1),
+                                      ),
+                                      child: Text(
+                                        '${stage.difficulty} Lv.${stage.difficultyLevel}',
+                                        style: TextStyle(
+                                          color: diffColor,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      stage.title,
+                                      textAlign: TextAlign.center,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      stage.artist,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.white70,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'BPM ${stage.bpm}  •  ${stage.noteCount} NOTES',
+                                      style: const TextStyle(
+                                        color: Color(0xFF69B8FF),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${AppTexts.get('reward')}: +${stage.rewardCoins} ${AppTexts.get('coins')}',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                    if (!isOwned) ...[
+                                      const SizedBox(height: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black54,
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.lock, color: Colors.white54, size: 12),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              '${stage.rewardCoins * 3} ${AppTexts.get('coins')} + ${AppTexts.get('buyWithAd')}',
+                                              style: const TextStyle(
+                                                color: Colors.white54,
+                                                fontSize: 10,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
         ),
-        centerTitle: true,
+        if (stages.length > 1)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                stages.length,
+                    (index) => Container(
+                  width: _currentPage == index ? 20 : 6,
+                  height: 6,
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  decoration: BoxDecoration(
+                    color: _currentPage == index
+                        ? const Color(0xFFFFD166)
+                        : Colors.white24,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        if (stages.length > 1)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(40, 4, 40, 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  onPressed: _currentPage > 0
+                      ? () => _goToPage(_currentPage - 1)
+                      : null,
+                  icon: Icon(
+                    Icons.arrow_back_ios_new,
+                    color: _currentPage > 0
+                        ? const Color(0xFFFFD166)
+                        : Colors.white24,
+                    size: 24,
+                  ),
+                ),
+                Text(
+                  '${_currentPage + 1} / ${stages.length}',
+                  style: const TextStyle(
+                    color: Colors.white54,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  onPressed: _currentPage < stages.length - 1
+                      ? () => _goToPage(_currentPage + 1)
+                      : null,
+                  icon: Icon(
+                    Icons.arrow_forward_ios,
+                    color: _currentPage < stages.length - 1
+                        ? const Color(0xFFFFD166)
+                        : Colors.white24,
+                    size: 24,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+
+    return widget.embedded
+        ? content
+        : Scaffold(
+      backgroundColor: const Color(0xFF151329),
+      body: SafeArea(
+        child: Column(
+          children: [
+            const GameHeader(titleKey: ''),
+            Expanded(child: content),
+          ],
+        ),
       ),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           GameBottomNavigation(currentIndex: 0),
-        ],
-      ),
-      body: Column(
-        children: [
-          // 가로 스와이프 PageView
-          Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              itemCount: stages.length,
-              onPageChanged: (index) {
-                setState(() => _currentPage = index);
-              },
-              itemBuilder: (context, index) {
-                final stage = stages[index];
-                final isOwned = userProvider.isStageOwned(stage.stageNumber, stageTitle: stage.title);
-                final diffColor = _getDifficultyColor(stage.difficulty);
-
-                return AnimatedScale(
-                  scale: _currentPage == index ? 1.0 : 0.9,
-                  duration: const Duration(milliseconds: 200),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                    child: Card(
-                      color: const Color(0xFF201D3D),
-                      elevation: _currentPage == index ? 8 : 2,
-                      clipBehavior: Clip.antiAlias,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        side: BorderSide(
-                          color: isOwned
-                              ? diffColor.withValues(alpha: 0.5)
-                              : Colors.white12,
-                          width: _currentPage == index ? 2 : 1,
-                        ),
-                      ),
-                      child: Opacity(
-                        opacity: isOwned ? 1.0 : 0.5,
-                        child: InkWell(
-                          onTap: () =>
-                              _onStageTap(context, stage, isOwned),
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                // 앨범 아트
-                                Container(
-                                  width: 100,
-                                  height: 100,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        diffColor.withValues(alpha: 0.35),
-                                        const Color(0xFF141226),
-                                      ],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: diffColor.withValues(alpha: 0.5),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      Icon(
-                                        _getTrackIcon(stage.stageNumber),
-                                        size: 45,
-                                        color: diffColor,
-                                      ),
-                                      if (stage.rank != '-')
-                                        Positioned(
-                                          right: 8,
-                                          top: 8,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFFFD166),
-                                              borderRadius: BorderRadius.circular(6),
-                                            ),
-                                            child: Text(
-                                              stage.rank,
-                                              style: const TextStyle(
-                                                color: Colors.black,
-                                                fontWeight: FontWeight.w900,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 14),
-
-                                // 난이도 뱃지
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: diffColor.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: diffColor.withValues(alpha: 0.6), width: 1),
-                                  ),
-                                  child: Text(
-                                    '${stage.difficulty} Lv.${stage.difficultyLevel}',
-                                    style: TextStyle(
-                                      color: diffColor,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-
-                                // 곡 정보
-                                Text(
-                                  stage.title,
-                                  textAlign: TextAlign.center,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w900,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  stage.artist,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  'BPM ${stage.bpm}  •  ${stage.noteCount} NOTES',
-                                  style: const TextStyle(
-                                    color: Color(0xFF69B8FF),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  '${AppTexts.get('reward')}: +${stage.rewardCoins} ${AppTexts.get('coins')}',
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 12,
-                                  ),
-                                ),
-
-                                const SizedBox(height: 10),
-
-                                // 잠금 상태 표시
-                                if (!isOwned)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black54,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(Icons.lock, color: Colors.white54, size: 14),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          '${stage.rewardCoins * 3} ${AppTexts.get('coins')} + ${AppTexts.get('buyWithAd')}',
-                                          style: const TextStyle(
-                                            color: Colors.white54,
-                                            fontSize: 11,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-
-          // 페이지 인디케이터 (dots) — 단일 곡일 때 숨김
-          if (stages.length > 1)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  stages.length,
-                      (index) => Container(
-                    width: _currentPage == index ? 20 : 6,
-                    height: 6,
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    decoration: BoxDecoration(
-                      color: _currentPage == index
-                          ? const Color(0xFFFFD166)
-                          : Colors.white24,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-          // 좌우 화살표 버튼 — 단일 곡일 때 숨김
-          if (stages.length > 1)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(40, 4, 40, 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    onPressed: _currentPage > 0
-                        ? () => _goToPage(_currentPage - 1)
-                        : null,
-                    icon: Icon(
-                      Icons.arrow_back_ios_new,
-                      color: _currentPage > 0
-                          ? const Color(0xFFFFD166)
-                          : Colors.white24,
-                      size: 24,
-                    ),
-                  ),
-                  Text(
-                    '${_currentPage + 1} / ${stages.length}',
-                    style: const TextStyle(
-                      color: Colors.white54,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: _currentPage < stages.length - 1
-                        ? () => _goToPage(_currentPage + 1)
-                        : null,
-                    icon: Icon(
-                      Icons.arrow_forward_ios,
-                      color: _currentPage < stages.length - 1
-                          ? const Color(0xFFFFD166)
-                          : Colors.white24,
-                      size: 24,
-                    ),
-                  ),
-                ],
-              ),
-            ),
         ],
       ),
     );

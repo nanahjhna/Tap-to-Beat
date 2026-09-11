@@ -234,7 +234,7 @@ class _ShopViewState extends State<ShopView> {
     return widget.embedded
         ? content
         : Scaffold(
-      appBar: const GameHeader(titleKey: 'shop'),
+      appBar: const GameHeader(titleKey: ''),
       body: content,
       bottomNavigationBar: const GameBottomNavigation(currentIndex: 2),
     );

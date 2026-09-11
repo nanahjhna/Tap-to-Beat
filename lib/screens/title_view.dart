@@ -29,6 +29,60 @@ class _TitleViewState extends State<TitleView> {
     }
   }
 
+  void _showLanguageDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF283593),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          '${AppTexts.get('language')} / Language',
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildLangButton(ctx, '한국어'),
+            const SizedBox(height: 8),
+            _buildLangButton(ctx, 'English'),
+            const SizedBox(height: 8),
+            _buildLangButton(ctx, '日本語'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLangButton(BuildContext ctx, String langName) {
+    final isSelected = AppTexts.currentLang == langName;
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isSelected ? const Color(0xFFFFD166) : Colors.white12,
+          foregroundColor: isSelected ? Colors.black : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          elevation: 0,
+        ),
+        onPressed: () async {
+          await AppTexts.setLanguage(langName);
+          if (ctx.mounted) {
+            Navigator.pop(ctx);
+            setState(() {}); // 언어 변경 후 화면 갱신
+          }
+        },
+        child: Text(
+          langName,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,16 +139,6 @@ class _TitleViewState extends State<TitleView> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Mikoshi Mayhem Edition',
-                  style: TextStyle(
-                    letterSpacing: 2,
-                    fontSize: 14,
-                    color: Color(0xFF69B8FF),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
                 const SizedBox(height: 48),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -123,6 +167,27 @@ class _TitleViewState extends State<TitleView> {
                   ),
                 ),
               ],
+            ),
+          ),
+          // 우측 상단 지구본 버튼
+          SafeArea(
+            child: Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Material(
+                  color: const Color(0xFF2D2855),
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () => _showLanguageDialog(context),
+                    child: const Padding(
+                      padding: EdgeInsets.all(11),
+                      child: Icon(Icons.language, color: Color(0xFFFFD166), size: 20),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
           // 화면 최하단에 배치된 배너 위젯

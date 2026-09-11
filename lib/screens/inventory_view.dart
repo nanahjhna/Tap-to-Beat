@@ -48,7 +48,7 @@ class _InventoryViewState extends State<InventoryView> {
     return widget.embedded
         ? content
         : Scaffold(
-            appBar: const GameHeader(titleKey: 'inventory'),
+            appBar: const GameHeader(titleKey: ''),
             body: content,
             bottomNavigationBar: const GameBottomNavigation(currentIndex: 3),
           );

@@ -7,7 +7,7 @@ class AccountLinkView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: const GameHeader(titleKey: 'account'),
+    appBar: const GameHeader(titleKey: ''),
     body: ListView(
       padding: const EdgeInsets.all(20),
       children: [

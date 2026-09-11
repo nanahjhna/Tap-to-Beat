@@ -100,7 +100,7 @@ class _QuestViewState extends State<QuestView> {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: const Color(0xFF151329),
-    appBar: const GameHeader(titleKey: 'quest'),
+    appBar: const GameHeader(titleKey: ''),
     body: ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _achievements.length,
