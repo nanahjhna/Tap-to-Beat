@@ -1,0 +1,531 @@
+============================================================
+          TAP TO BEAT — 프로젝트 설계서
+============================================================
+
+
+1. 프로젝트 구조 총览
+============================================================
+
+TapToBeat/
+├── lib/
+│   ├── main.dart                          # 앱 진입점, 라우팅 정의
+│   ├── models/
+│   │   ├── stage_model.dart              # NoteData, StageModel
+│   │   └── effect_model.dart             # ShopData, noteSkins
+│   ├── data/
+│   │   └── song_registry.dart            # SongData, SongRegistry (곡 목록)
+│   ├── services/
+│   │   ├── stage_generator.dart          # 노트 생성 엔진
+│   │   ├── user_session.dart             # 로그인 세션
+│   │   ├── ad_reward_helper.dart         # 광고 보상
+│   │   └── database_helper.dart          # SQLite (taptoeat.db)
+│   ├── providers/
+│   │   ├── user_provider.dart            # 사용자 상태 (코인, 소유 목록)
+│   │   └── settings_provider.dart        # 설정 (볼륨, 타이밍 오프셋)
+│   ├── game/
+│   │   └── rhythm_game_world.dart        # Flame 게임 엔진, RhythmNoteComponent
+│   ├── screens/
+│   │   ├── loading_view.dart             # 앱 로딩
+│   │   ├── title_view.dart               # 메인 타이틀
+│   │   ├── login_view.dart               # 로그인
+│   │   ├── main_screen.dart              # 메인 허브 (탭 바)
+│   │   ├── lobby_tab.dart                # 로비 (퀵플레이, 스테이지 선택)
+│   │   ├── stage_select_view.dart        # 스테이지 선택
+│   │   ├── game_play_view.dart           # 게임 플레이
+│   │   ├── result_view.dart              # 게임 결과
+│   │   ├── pause_overlay.dart            # 일시정지 오버레이
+│   │   ├── shop_view.dart                # 상점
+│   │   ├── inventory_view.dart           # 인벤토리
+│   │   ├── settings_view.dart            # 설정
+│   │   ├── account_link_view.dart        # 계정 연결
+│   │   ├── quest_view.dart               # 퀘스트
+│   │   ├── notice_view.dart              # 공지/출석
+│   │   └── lobby_tab.dart                # 로비
+│   └── widgets/
+│       ├── game_header.dart              # 공통 AppBar
+│       ├── game_bottom_navigation.dart   # 공통 하단 네비게이션
+│       └── ad_banner_widget.dart         # 광고 배너
+├── assets/
+│   ├── sounds/
+│   │   ├── basicmusic/                   # 기본 배경음
+│   │   ├── shopmusic/                    # 상점 음악
+│   │   └── sfx/                          # 효과음 (hit.wav, start.mp3, clear.mp3)
+│   ├── charts/                           # 차트 JSON 파일
+│   │   ├── basicmusic/
+│   │   └── shopmusic/
+│   ├── images/
+│   └── icon/
+├── tools/
+│   └── beat_detector.py                  # Python beat detection 스크립트
+├── pubspec.yaml
+└── test/
+
+
+
+2. 전체 화면 기능 설명 및 라우팅
+============================================================
+
+2.1 LoadingView (/loading)
+--------------------------
+| 항목 | 내용 |
+|------|------|
+| 기능 | 앱 시작 시 버전 확인, 필수 업데이트 체크 후 메인으로 이동 |
+| 진입 | 앱 실행 시 초기 라우트 |
+| 이탈 | pushReplacementNamed('/') → TitleView |
+| 수신 파라미터 | 없음 |
+
+2.2 TitleView (/)
+-----------------
+| 항목 | 내용 |
+|------|------|
+| 기능 | 앱 타이틀 화면, 언어 선택, 로그인 상태 확인 |
+| 진입 | LoadingView에서 pushReplacementNamed('/') |
+| 이탈 | 로그인 시 → /login, 로그인 상태 시 → /main |
+| 수신 파라미터 | 없음 |
+
+2.3 LoginView (/login)
+----------------------
+| 항목 | 내용 |
+|------|------|
+| 기능 | 게스트 로그인 (현재 하나만 지원) |
+| 진입 | TitleView에서 비로그인 시 pushReplacementNamed('/login') |
+| 이탈 | pushReplacementNamed('/main') |
+| 수신 파라미터 | 없음 |
+
+2.4 MainScreen (/main)
+----------------------
+| 항목 | 내용 |
+|------|------|
+| 기능 | 메인 허브, 4개 탭 (로비/상점/인벤토리/설정) |
+| 진입 | TitleView, LoginView, ResultView, SettingsView |
+| 이탈 | 탭 내부에서만 동작, pushNamedAndRemoveUntil('/main')으로 되돌아옴 |
+| 수신 파라미터 | selectedTab (int, 기본 0) |
+| 탭 구성 | [LobbyTab, ShopView(임베디드), InventoryView(임베디드), SettingsView(임베디드)] |
+
+2.5 LobbyTab (MainScreen 탭 0, 임베디드)
+---------------------------------------
+| 항목 | 내용 |
+|------|------|
+| 기능 | 코인 표시, 최근 플레이 곡 배너, 퀵플레이, 스테이지 선택 |
+| 진입 | MainScreen 내부 (임베디드) |
+| 이탈 | 내부 setState로 닫힘 |
+| 내부 이동 | 퀵플레이 → /gamePlay, Select Stage → StageSelectView(임베디드) |
+
+2.6 StageSelectView (임베디드)
+-----------------------------
+| 항목 | 내용 |
+|------|------|
+| 기능 | 가로 PageView로 모든 스테이지 표시, 난이도 선택 팝업 |
+| 진입 | LobbyTab의 "Select Stage" 버튼 |
+| 이탈 | 백 버튼으로 임베디드 뷰 닫기 |
+| 내부 이동 | 소유 스테이지 선택 → 난이도 팝업 → /gamePlay |
+| | 잠금 해제 → /shop |
+| 수신 파라미터 | embedded (bool) |
+
+2.7 GamePlayView (/gamePlay)
+----------------------------
+| 항목 | 내용 |
+|------|------|
+| 기능 | 핵심 리듬 게임, Flame 엔진, D/F/J/K 키 입력, PERFECT/GOOD/BAD/MISS 판정 |
+| 진입 | LobbyTab 퀵플레이, StageSelectView 난이도 선택 |
+| 이탈 | 일시정지 → PauseOverlay, 게임 종료 → /result |
+| 수신 파라미터 | stage (int), difficulty (String) |
+| 주의 | PopScope(canPop: false)로 백 버튼 가로막음 |
+
+2.8 PauseOverlay (Dialog, 비라우트)
+------------------------------------
+| 항목 | 내용 |
+|------|------|
+| 기능 | 게임 일시정지 (재개/다시하기/설정/로비 이동) |
+| 진입 | GamePlayView 내 _pauseGame() → showDialog |
+| 이탈 | 내부 버튼별 분기 |
+| 내부 이동 | 설정 → /settings, 로비 → pushNamedAndRemoveUntil('/main'), 다시하기 → 게임 재시작 |
+
+2.9 ResultView (/result)
+------------------------
+| 항목 | 내용 |
+|------|------|
+| 기능 | 게임 결과 화면 (랭크, 점수, 코인 보상, 판정 내역) |
+| 진입 | GamePlayView에서 _finishGame() → pushReplacementNamed('/result') |
+| 이탈 | Retry → /gamePlay, Select Stage → /stageSelect, Lobby → /main |
+| 수신 파라미터 | {victory, stage, difficulty, score, maxCombo, perfect, good, bad, miss, totalNotes, songTitle, songArtist} |
+
+2.10 ShopView (/shop)
+---------------------
+| 항목 | 내용 |
+|------|------|
+| 기능 | 곡 및 이펙트 구매, 광고 보상 활용 |
+| 진입 | MainScreen 탭 1, StageSelectView 잠금 해제 버튼 |
+| 이탈 | 내부 구매 완료 후 MainScreen으로 되돌아옴 |
+| 수신 파라미터 | embedded (bool) |
+
+2.11 InventoryView (/inventory)
+-------------------------------
+| 항목 | 내용 |
+|------|------|
+| 기능 | 소유한 곡/이펙트 목록, 이펙트 장착 토글 |
+| 진입 | MainScreen 탭 2 |
+| 이탈 | 뒤로가기로 이전 탭 |
+| 수신 파라미터 | embedded (bool) |
+
+2.12 SettingsView (/settings)
+-----------------------------
+| 항목 | 내용 |
+|------|------|
+| 기능 | BGM/SFX 볼륨, 게스트 → Google 계정 전환 |
+| 진입 | MainScreen 탭 3, PauseOverlay 내부 |
+| 이탈 | 로그아웃 → pushNamedAndRemoveUntil('/'), 계정 전환 → pushReplacementNamed('/main') |
+| 수신 파라미터 | embedded (bool) |
+
+2.13 AccountLinkView (/accountLink)
+-----------------------------------
+| 항목 | 내용 |
+|------|------|
+| 기능 | 계정 연결 (게스트 → Google) |
+| 진입 | TitleView 메뉴에서 |
+| 이탈 | 자체 내에서 종료 |
+| 수신 파라미터 | 없음 |
+
+2.14 QuestView (/quest)
+-----------------------
+| 항목 | 내용 |
+|------|------|
+| 기능 | 4개 퀘스트 (클리어 수, S랭크 등) + 보상 지급 |
+| 진입 | MainScreen 탭 0 (LobbyTab 내부 바로가기) |
+| 이탈 | 뒤로가기로 이전 탭 |
+| 수신 파라미터 | 없음 |
+
+2.15 NoticeView (/notice)
+-------------------------
+| 항목 | 내용 |
+|------|------|
+| 기능 | 공지사항 + 7일 출석 차트 |
+| 진입 | MainScreen 탭 0 (LobbyTab 내부 바로가기) |
+| 이탈 | 뒤로가기로 이전 탭 |
+| 수신 파라미터 | 없음 |
+
+
+
+3. 전체 네비게이션 플로우도
+============================================================
+
+[LoadingView] ──→ [TitleView]
+                      │
+              ┌───────┴───────┐
+              │ 로그인 없음    │ 로그인 있음
+              ▼               ▼
+        [LoginView]      [MainScreen]
+              │               │
+              │     ┌─────────┼─────────┬──────────┐
+              │     │         │         │          │
+              │   [Lobby]  [Shop]  [Inv]  [Settings]
+              │     │
+              │     ├── 퀵플레이 ──→ /gamePlay
+              │     ├── 스테이지 선택 ──→ StageSelectView(임베디드)
+              │     │                    │
+              │     │              소유 스테이지 선택
+              │     │                    │
+              │     │              난이도 선택 ──→ /gamePlay
+              │     │              잠금 해제 ──→ /shop
+              │     ├── 퀘스트 ──→ /quest
+              │     ├── 공지 ──→ /notice
+              │
+              └───────────────────────────────────┐
+                                                  │
+[GamePlayView] ◄──────────────────────────────────┘
+  │
+  ├── 백 버튼 → PauseOverlay (Dialog)
+  │                ├── 재개 → 게임 계속
+  │                ├── 다시하기 → 게임 재시작
+  │                ├── 설정 → /settings
+  │                └── 로비 → /main
+  │
+  └── 게임 종료 → /result
+                    │
+                    ├── Retry → /gamePlay (같은 스테이지/난이도)
+                    ├── Select Stage → /stageSelect (MainScreen.tab)
+                    └── Lobby → /main
+
+
+
+4. 라우팅 정의 (main.dart)
+============================================================
+
+routes: {
+  '/':          (context) => const TitleView(),
+  '/loading':   (context) => const LoadingView(),
+  '/login':     (context) => const LoginView(),
+  '/accountLink': (context) => const AccountLinkView(),
+  '/main':      (context) => const MainScreen(),
+  '/shop':      (context) => const ShopView(),
+  '/settings':  (context) => const SettingsView(),
+  '/stageSelect': (context) => const MainScreen(selectedTab: 1),
+  '/gamePlay':  (context) => const GamePlayView(),
+  '/result':    (context) => const ResultView(),
+  '/inventory': (context) => const InventoryView(),
+  '/quest':     (context) => const QuestView(),
+  '/notice':    (context) => const NoticeView(),
+}
+
+
+
+5. 새 곡 추가 시 수정해야 할 파일 분석
+============================================================
+
+5.1 필수 수정 파일 (반드시 변경)
+--------------------------------
+| 순서 | 파일 | 수정 내용 | 이유 |
+|------|------|-----------|------|
+| 1 | lib/data/song_registry.dart | SongRegistry.allSongs에 새 SongData 추가 | 곡 목록 등록 |
+| 2 | assets/charts/{카테고리}/{곡명}.json | Python tools/beat_detector.py로 차트 생성 | 음악에 맞는 노트 데이터 |
+| 3 | pubspec.yaml | assets/charts/에 새 카테고리 경로 추가 (있으면 생략) | Flutter가 차트 파일을 번들에 포함 |
+
+5.2 선택적 수정 파일 (상황에 따라)
+----------------------------------
+| 파일 | 수정 내용 | 상황 |
+|------|-----------|------|
+| lib/services/stage_generator.dart | _generateFromChart에서 곡별 노트 수 조정 | 차트 길이가 기존 목표치와 다를 때 |
+| lib/models/stage_model.dart | bpm 필드 갱신 | 새 곡의 BPM이 다를 때 (현재는 SongData에 있으므로 대부분 불필요) |
+| lib/screens/stage_select_view.dart | 잠금 해제 로직이 stageNum 기반이면 추가 불필요 | 스테이지 번호가 기존 순서와 맞을 때 |
+| lib/screens/lobby_tab.dart | recentStage 로직이 lastPlayedStageId 기반이면 추가 불필요 | 기본 동작 변경 없을 때 |
+| assets/sounds/{카테고리}/{곡명}.mp3 | 실제 오디오 파일 추가 | 새 곡이 있을 때 |
+| lib/providers/user_provider.dart | isStageOwned에서 새 스테이지 ID 추가 | 스테이지 잠금 해제 로직이 번호 기반일 때 |
+
+5.3 수정 순서 요약 (새 곡 1개 추가 시)
+--------------------------------------
+Step 1: MP3 파일을 assets/sounds/{카테고리}/에 배치
+Step 2: python tools/beat_detector.py input.mp3 output.json 실행
+Step 3: assets/charts/{카테고리}/에 JSON 파일 이동
+Step 4: song_registry.dart에 SongData 추가
+Step 5: pubspec.yaml에 차트 경로 추가 (없으면)
+Step 6: flutter pub get 실행
+Step 7: 앱 실행하여 확인
+
+5.4 SongData 생성 템플릿
+--------------------------
+SongData(
+  id: 3,                                    // 기존 최대 id + 1
+  title: '새 곡 이름',
+  artist: '아티스트명',
+  bpm: 140,                                 // 곡의 BPM
+  audioPath: 'sounds/{카테고리}/새곡.mp3',   // MP3 파일 경로
+  chartPath: 'assets/charts/{카테고리}/새곡.json',  // 차트 JSON 경로
+  baseRewardCoins: 200,                     // 클리어 보상 코인
+  baseNotes: [],                            // 차트 사용 시 빈 리스트 (미사용)
+),
+
+5.5 StageGenerator가 새 곡을 인식하는 메커니즘
+----------------------------------------------
+generateStage(stageNum, difficulty) 호출
+  → SongRegistry.allSongs.firstWhere((s) => s.id == stageNum)
+  → song.chartPath에서 JSON 파일 경로 추출
+  → _beatCache[song.id]에서 차트 데이터 조회
+  → 차트 존재: _generateFromChart()로 실제 비트 기반 노트 생성
+  → 차트 없음: _generateOriginal()으로 기존 랜덤 생성 (폴백)
+
+
+
+6. 핵심 데이터 모델 요약
+============================================================
+
+6.1 StageModel
+--------------
+class StageModel {
+  int stageNumber;      // 스테이지 ID
+  String title;         // 곡명
+  String artist;        // 아티스트
+  int bpm;             // BPM
+  String difficulty;    // EASY/NORMAL/HARD
+  int difficultyLevel;  // 난이도 레벨
+  String audioPath;     // MP3 파일 경로
+  List<NoteData> notes; // 노트 데이터 목록
+  String rank;          // S/A/B/C/F
+  int rewardCoins;      // 보상 코인
+}
+
+6.2 NoteData
+------------
+class NoteData {
+  int timeMs;   // 노트 등장 시간 (ms)
+  int lane;     // 레인 (0=D, 1=F, 2=J, 3=K)
+}
+
+6.3 SongData
+------------
+class SongData {
+  int id;              // 곡 ID
+  String title;        // 곡명
+  String artist;       // 아티스트
+  int bpm;             // BPM
+  String audioPath;    // MP3 경로
+  String? chartPath;   // 차트 JSON 경로 (있으면 차트 기반 생성)
+  int baseRewardCoins; // 보상 코인
+  List<NoteData> baseNotes;  // 미사용 (dead code)
+}
+
+
+
+7. 차트 JSON 스키마
+============================================================
+
+[1000, 1429, 1857, 2286, 2714, ...]
+
+- 타입: List<int> (정수 배열)
+- 값: 각 노트가 등장하는 시간 (밀리초)
+- 첫 번째 값: 보통 1000 (게임 시작 1초 후)
+- 간격: BPM에 따른 비트 간격 (예: BPM 140 → 약 428ms)
+
+
+
+8. 난이도별 차트 활용 규칙
+============================================================
+
+| 난이도 | 차트 선택 방식 | 예시 (110개 차트) |
+|--------|---------------|-------------------|
+| EASY | 2칸째 선택 (노트 수 절반) | 55개 노트 |
+| NORMAL | 전체 사용 | 110개 노트 |
+| HARD | 전체 + 보간 노트 추가 | 170개 노트 |
+
+
+
+9. 도구 및 외부 파일
+============================================================
+
+9.1 tools/beat_detector.py
+---------------------------
+- 의존성: pip install librosa
+- 사용법: python beat_detector.py input.mp3 output.json
+- 동작: MP3에서 librosa.beat.beat_track으로 비트 온셋 탐지 후 타임스탬프 배열 JSON 생성
+
+9.2 assets/ 폴더 구조
+----------------------
+assets/sounds/
+  basicmusic/   → MikoshiMayhem.mp3
+  shopmusic/    → TwilightHighway.mp3
+  sfx/          → hit.wav, start.mp3, clear.mp3
+assets/charts/
+  basicmusic/   → MikoshiMayhem.json (110개 비트)
+  shopmusic/    → TwilightHighway.json (110개 비트)
+
+9.3 pubspec.yaml 핵심 항목
+---------------------------
+- 의존성: audioplayers, flame, provider, shared_preferences, sqflite, google_mobile_ads, upgrader
+- 자산: assets/images/, assets/sounds/basicmusic/, assets/sounds/shopmusic/, assets/charts/basicmusic/, assets/charts/shopmusic/
+
+
+
+10. 서비스 및 데이터베이스
+============================================================
+
+10.1 DatabaseHelper (SQLite: taptoeat.db)
+-----------------------------------------
+테이블: users, owned_items, stage_results, quest_claims
+주요 메서드: getOrCreateUser, addCoins, spendCoins, purchaseSong, purchaseEffect,
+            equipItem, unequipItem, saveStageResult, getClearedCount, hasRankS,
+            isQuestClaimed, claimQuest
+
+10.2 UserProvider (ChangeNotifier)
+----------------------------------
+상태: _userId, _coins, _lastPlayedStageId, _ownedSongs, _ownedEffects,
+      _equippedSongs, _equippedEffects
+DB를 통해 영속화됨
+
+10.3 SettingsProvider (ChangeNotifier)
+--------------------------------------
+상태: bgmVolume (0.8), sfxVolume (0.9), timingOffset (0.0)
+SharedPreferences를 통해 영속화됨
+
+10.4 UserSession
+----------------
+SharedPreferences key: login_provider
+메서드: loginProvider(), saveLoginProvider(), logout()
+
+
+
+11. 노트 생성 시스템 상세
+============================================================
+
+11.1 기존 방식 (폴백)
+----------------------
+StageGenerator._generateOriginal()
+- Random(42 + stageNum * 10 + level) 결정적 시드
+- BPM 기반 고정 비트 그리드로 타임 계산
+- random.nextInt(4)로 랜덤 레인 배정
+- 난이도별 시간 간격 패턴:
+  - EASY: 2번째 노트마다 half-beat
+  - NORMAL: 4번째 노트마다 1.5-beat, 나머지 1/3-beat
+  - HARD: 4번째 노트마다 half-beat, 나머지 quarter-beat
+
+11.2 차트 기반 방식
+-------------------
+StageGenerator._generateFromChart()
+- preloadCharts()로 앱 시작 시 모든 JSON을 메모리에 캐싱
+- _beatCache[song.id]에서 차트 데이터 조회
+- 난이도별 선택 방식:
+  - EASY: 차트에서 2칸째 선택 (selectedIndex += 2)
+  - NORMAL: 차트 모든 비트 순서 사용 (selectedIndex += 1)
+  - HARD: 차트 모든 비트 사용 + 보간 노트 추가 (selectedIndex += 2, midBeat 계산)
+- 모든 레인 배정은 random.nextInt(4)로 유지
+
+11.3 경계 조건 (수정 후)
+-------------------------
+- HARD 모드에서 midBeat 계산 시 selectedIndex + 1 < chartBeats.length 조건으로
+  범위 초과 방지
+- selectedIndex >= chartBeats.length일 때 0으로 리셋 (사이클링)
+
+
+
+12. 게임 플레이 핵심 로직
+============================================================
+
+12.1 노트 애니메이션
+--------------------
+RhythmGameWorld.onLoad(): NoteData → RhythmNoteComponent 변환 (초기 y=-999)
+RhythmGameWorld.update(): targetTimeMs 기준으로 판정선까지 낙하
+  - noteStartTime = targetTimeMs - fallDurationMs
+  - progress = (currentMs - noteStartTime) / fallDurationMs
+  - currentY = progress * judgeLineY
+
+12.2 판정 시스템
+-----------------
+- 16ms 주기 _checkGameTick() 실행
+- judgeMs > targetTimeMs + missGraceMs → MISS
+- 플레이어 입력 시 _judgeTrack()으로 가장 가까운 미히트 노트 판정
+- 판정 기준 (난이도별):
+  - EASY: perfect 100ms, good 160ms, bad 240ms, missGrace 240ms
+  - NORMAL: perfect 80ms, good 140ms, bad 210ms, missGrace 200ms
+  - HARD: perfect 65ms, good 125ms, bad 200ms, missGrace 180ms
+- 점수: PERFECT 300, GOOD 100, BAD 50
+- 체력: PERFECT +4, GOOD +1.5, MISS -6, BAD -2.5
+
+12.3 키 매핑
+-------------
+D(0) → track 0 (왼쪽)
+F(1) → track 1
+J(2) → track 2
+K(3) → track 4 (오른쪽)
+
+
+
+13. 참고 사항
+============================================================
+
+13.1 /stageSelect 라우트
+-------------------------
+MainScreen(selectedTab: 1)로 매핑되어 있어 Shop 탭을 표시함.
+StageSelectView는 LobbyTab 내부에서만 임베디드로 동작.
+
+13.2 baseNotes 필드
+-------------------
+SongData.baseNotes는 현재 사용되지 않음 (dead code).
+차트 JSON 파일이 실제 노트 데이터를 제공하므로 baseNotes는 빈 리스트로 유지 가능.
+
+13.3 기존 난이도 참조
+---------------------
+stage_select_view.dart에서 EXPERT, MASTER가 UI에 참조되지만
+playSpecs, difficultySpecs에는 EASY, NORMAL, HARD만 정의되어 있음.
+
+============================================================
+문서 작성일: 2026-09-12
+프로젝트: TapToBeat v1.0.0
+============================================================

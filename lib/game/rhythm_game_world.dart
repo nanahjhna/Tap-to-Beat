@@ -30,12 +30,19 @@ class RhythmGameWorld extends FlameGame {
   final List<RhythmNoteComponent> noteComponents = [];
   Color noteColor;
 
+  Color judgeLineColor = const Color(0xFFFFFA65);
+  DateTime? _flashRedUntil;
+
   RhythmGameWorld({
     required this.stageData,
     required this.fallDurationMs,
     required this.getEffectiveMs,
     required this.noteColor,
   });
+
+  void flashRed(Duration duration) {
+    _flashRedUntil = DateTime.now().add(duration);
+  }
 
   @override
   Future<void> onLoad() async {
@@ -46,7 +53,6 @@ class RhythmGameWorld extends FlameGame {
 
     final trackWidth = boardWidth / 4.0;
 
-    // 노트 컴포넌트 생성 및 추가
     int id = 0;
     for (final n in stageData.notes) {
       final noteComp = RhythmNoteComponent(
@@ -54,7 +60,7 @@ class RhythmGameWorld extends FlameGame {
         targetTimeMs: n.timeMs.toDouble(),
         color: noteColor,
         size: Vector2(trackWidth - 8, 18),
-        position: Vector2(n.lane * trackWidth + 4, -999), // 초기 위치 대기
+        position: Vector2(n.lane * trackWidth + 4, -999),
       );
       noteComponents.add(noteComp);
       add(noteComp);
@@ -67,10 +73,25 @@ class RhythmGameWorld extends FlameGame {
     final currentMs = getEffectiveMs();
     final trackWidth = boardWidth / 4.0;
 
+    if (_flashRedUntil != null && DateTime.now().isAfter(_flashRedUntil!)) {
+      _flashRedUntil = null;
+    }
+
+    bool hasNoteAtJudgeLine = false;
+    bool hasMissedNote = false;
+
     for (final note in noteComponents) {
+      if (note.isMissed) {
+        hasMissedNote = true;
+      }
       if (note.isHit || note.isMissed) {
-        note.position.y = -999; // 화면 밖으로 이동
+        note.position.y = -999;
         continue;
+      }
+
+      final diff = (currentMs - note.targetTimeMs).abs();
+      if (diff < 200) {
+        hasNoteAtJudgeLine = true;
       }
 
       final noteStartTime = note.targetTimeMs - fallDurationMs;
@@ -82,6 +103,16 @@ class RhythmGameWorld extends FlameGame {
         final currentY = progress * judgeLineY;
         note.position.y = currentY;
       }
+    }
+
+    if (_flashRedUntil != null) {
+      judgeLineColor = const Color(0xFFFF4757);
+    } else if (hasNoteAtJudgeLine) {
+      judgeLineColor = const Color(0xFF2ED573);
+    } else if (hasMissedNote) {
+      judgeLineColor = const Color(0xFFFF4757);
+    } else {
+      judgeLineColor = const Color(0xFFFFFA65);
     }
   }
 

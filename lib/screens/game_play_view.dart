@@ -179,7 +179,9 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
 
     if (_life <= 0 || isFinished) {
       _finishGame(_life > 0);
+      return;
     }
+    if (mounted) setState(() {});
   }
 
   Color _notesColor() {
@@ -266,6 +268,7 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
   }
 
   void _handleMiss({bool isBad = false}) {
+    _gameWorld?.flashRed(const Duration(milliseconds: 300));
     _combo = 0;
     final missDmg = StageGenerator.playValue(_difficulty, 'missDmg');
     final badDmg = StageGenerator.playValue(_difficulty, 'badDmg');
@@ -408,11 +411,21 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
                                 onTapCancel: () => _handleKeyRelease(index),
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    color: _keyActive[index]
+                                    gradient: _keyActive[index] && _gameWorld != null
+                                        ? LinearGradient(
+                                            begin: Alignment.topCenter,
+                                            end: Alignment.bottomCenter,
+                                            colors: [
+                                              _gameWorld!.noteColor.withValues(alpha: 0.5),
+                                              _gameWorld!.noteColor.withValues(alpha: 0.2),
+                                            ],
+                                          )
+                                        : null,
+                                    color: _keyActive[index] && _gameWorld == null
                                         ? Colors.white.withValues(alpha: 0.08)
                                         : (index % 2 == 0
-                                        ? const Color(0xFF14141E)
-                                        : const Color(0xFF1A1A26)),
+                                            ? const Color(0xFF14141E)
+                                            : const Color(0xFF1A1A26)),
                                     border: Border(
                                       right: BorderSide(
                                         color: index < 3 ? Colors.white12 : Colors.transparent,
@@ -438,10 +451,10 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
                           child: Container(
                             height: 6,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFFFA65),
+                              color: _gameWorld?.judgeLineColor ?? const Color(0xFFFFFA65),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFFFFA65).withValues(alpha: 0.8),
+                                  color: (_gameWorld?.judgeLineColor ?? const Color(0xFFFFFA65)).withValues(alpha: 0.8),
                                   blurRadius: 15,
                                   spreadRadius: 2,
                                 ),
@@ -561,7 +574,19 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
               onTapCancel: () => _handleKeyRelease(index),
               child: Container(
                 decoration: BoxDecoration(
-                  color: isActive ? Colors.white.withValues(alpha: 0.28) : Colors.transparent,
+                  gradient: isActive && _gameWorld != null
+                      ? LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            _gameWorld!.noteColor.withValues(alpha: 0.7),
+                            _gameWorld!.noteColor.withValues(alpha: 0.3),
+                          ],
+                        )
+                      : null,
+                  color: isActive && _gameWorld == null
+                      ? Colors.white.withValues(alpha: 0.28)
+                      : Colors.transparent,
                   border: Border(
                     top: BorderSide(
                       color: isActive ? const Color(0xFFFFFA65) : const Color(0xFF444444),

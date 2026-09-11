@@ -7,6 +7,7 @@ import 'package:upgrader/upgrader.dart';
 
 import 'providers/user_provider.dart';
 import 'providers/settings_provider.dart';
+import 'services/stage_generator.dart';
 import 'screens/title_view.dart';
 import 'screens/main_screen.dart';
 import 'screens/shop_view.dart';
@@ -34,6 +35,8 @@ void main() async {
 
   final settingsProvider = SettingsProvider();
   await settingsProvider.load();
+
+  await StageGenerator.preloadCharts();
 
   runApp(
     MultiProvider(

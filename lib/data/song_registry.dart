@@ -6,6 +6,7 @@ class SongData {
   final String artist;
   final int bpm;
   final String audioPath;
+  final String? chartPath;
   final int baseRewardCoins;
   final List<NoteData> baseNotes;
 
@@ -16,6 +17,7 @@ class SongData {
     required this.bpm,
     required this.audioPath,
     required this.baseRewardCoins,
+    this.chartPath,
     required this.baseNotes,
   });
 }
@@ -28,6 +30,7 @@ class SongRegistry {
       artist: 'Matsuri Sound Team',
       bpm: 140,
       audioPath: 'sounds/basicmusic/MikoshiMayhem.mp3',
+      chartPath: 'assets/charts/basicmusic/MikoshiMayhem.json',
       baseRewardCoins: 200,
       baseNotes: [
         NoteData(timeMs: 1000, lane: 0),
@@ -42,6 +45,7 @@ class SongRegistry {
       artist: 'Matsuri Sound Team',
       bpm: 140,
       audioPath: 'sounds/shopmusic/TwilightHighway.mp3',
+      chartPath: 'assets/charts/shopmusic/TwilightHighway.json',
       baseRewardCoins: 200,
       baseNotes: [
         NoteData(timeMs: 1000, lane: 0),
