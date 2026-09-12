@@ -258,6 +258,7 @@ class _ShopViewState extends State<ShopView> {
           coinPrice: item.coinPrice,
           requireAd: false,
           isOwned: isOwned,
+          isBasic: false,
           onTap: isOwned
               ? null
               : () => _showPurchaseDialog(item.id, item.name, item.coinPrice, false),
@@ -267,7 +268,19 @@ class _ShopViewState extends State<ShopView> {
   }
 
   Widget _buildMusicList(UserProvider userProvider) {
-    final allItems = [...ShopData.shopMusic];
+    // 이미 보유했거나 기본곡인 항목을 제외하고 필터링
+    final allItems = ShopData.shopMusic.where((item) {
+      return !userProvider.ownsSong(item.id);
+    }).toList();
+
+    if (allItems.isEmpty) {
+      return const Center(
+        child: Text(
+          '모든 음악을 보유하고 있습니다!',
+          style: TextStyle(color: Colors.white60, fontSize: 14),
+        ),
+      );
+    }
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -282,11 +295,10 @@ class _ShopViewState extends State<ShopView> {
           icon: item.icon,
           color: item.color,
           coinPrice: item.coinPrice,
-          requireAd: true,
+          requireAd: item.requireAd,
           isOwned: isOwned,
-          onTap: isOwned
-              ? null
-              : () => _showPurchaseDialog(item.id, item.name, item.coinPrice, true),
+          isBasic: item.isBasic,
+          onTap: () => _showPurchaseDialog(item.id, item.name, item.coinPrice, item.requireAd),
         );
       },
     );
@@ -300,6 +312,7 @@ class _ShopViewState extends State<ShopView> {
     required int coinPrice,
     required bool requireAd,
     required bool isOwned,
+    required bool isBasic,
     VoidCallback? onTap,
   }) {
     return Card(
@@ -327,11 +340,13 @@ class _ShopViewState extends State<ShopView> {
             ? Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFF2ED573).withValues(alpha: 0.2),
+            color: isBasic
+                ? const Color(0xFF2ED573).withValues(alpha: 0.2)
+                : const Color(0xFF2ED573).withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
-            AppTexts.get('owned'),
+            isBasic ? '기본음악' : AppTexts.get('owned'),
             style: const TextStyle(
               color: Color(0xFF2ED573),
               fontWeight: FontWeight.bold,

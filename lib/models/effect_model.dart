@@ -9,6 +9,13 @@ class ShopItem {
   final Color color;
   final IconData icon;
   final String type; // 'song' or 'effect'
+  final bool isBasic; // 기본음악 true, 상점음악 false
+  final int stageNumber; // stage 매칭용 (song인 경우만 사용)
+  final int? bpm;
+  final String? artist;
+  final String? audioPath;
+  final String? chartPath;
+  final int? baseRewardCoins;
 
   const ShopItem({
     required this.id,
@@ -19,6 +26,13 @@ class ShopItem {
     required this.color,
     required this.icon,
     required this.type,
+    this.isBasic = false,
+    this.stageNumber = 0,
+    this.bpm,
+    this.artist,
+    this.audioPath,
+    this.chartPath,
+    this.baseRewardCoins,
   });
 }
 
@@ -110,15 +124,40 @@ class ShopData {
     ),
   ];
 
-  static const List<ShopItem> shopMusic = [
+  static const List<ShopItem> allSongs = [
+    ShopItem(
+      id: 'music_mikoshi_mayhem',
+      name: 'Mikoshi Mayhem',
+      desc: 'Matsuri Sound Team',
+      coinPrice: 0,
+      color: Color(0xFF2ED573),
+      icon: Icons.music_note_rounded,
+      type: 'music',
+      isBasic: true,
+      stageNumber: 1,
+      bpm: 140,
+      artist: 'Matsuri Sound Team',
+      audioPath: 'sounds/MikoshiMayhem.mp3',
+      chartPath: 'assets/charts/MikoshiMayhem.json',
+      baseRewardCoins: 200,
+    ),
     ShopItem(
       id: 'music_twilight_highway',
       name: 'Twilight Highway',
-      desc: 'atmospheric ambient track',
-      coinPrice: 200,
+      desc: 'Matsuri Sound Team',
+      coinPrice: 0,
       color: Color(0xFF9B59B6),
       icon: Icons.music_note_rounded,
       type: 'music',
+      isBasic: true,
+      stageNumber: 2,
+      bpm: 140,
+      artist: 'Matsuri Sound Team',
+      audioPath: 'sounds/TwilightHighway.mp3',
+      chartPath: 'assets/charts/TwilightHighway.json',
+      baseRewardCoins: 200,
     ),
   ];
+
+  static List<ShopItem> get shopMusic => allSongs.where((s) => s.type == 'music').toList();
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../services/database_helper.dart';
+import '../models/effect_model.dart';
 
 class UserProvider extends ChangeNotifier {
   final DatabaseHelper _db = DatabaseHelper.instance;
@@ -16,7 +17,17 @@ class UserProvider extends ChangeNotifier {
   int get coins => _coins;
   int get lastPlayedStageId => _lastPlayedStageId;
 
-  bool ownsSong(String itemId) => _ownedSongs.contains(itemId);
+  bool ownsSong(String itemId) {
+    if (_ownedSongs.contains(itemId)) return true;
+    for (final song in ShopData.allSongs) {
+      if (song.isBasic && song.type == 'music' &&
+          (itemId == 'stage_${song.stageNumber}' ||
+           itemId.toLowerCase() == 'music_${song.name.toLowerCase().replaceAll(" ", "_")}')) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   // ── 공개된 Set getter ──
 
@@ -26,27 +37,20 @@ class UserProvider extends ChangeNotifier {
   bool isSongEquipped(String itemId) => _equippedSongs.contains(itemId);
   bool isEffectEquipped(String itemId) => _equippedEffects.contains(itemId);
 
-  // ── 곡/스테이지 보유 통합 판정 메서드 (여기에 추가됨) ──
+  // ── 곡/스테이지 보유 통합 판정 메서드 ──
   bool isStageOwned(int stageNumber, {String? stageTitle}) {
-    // 1번 스테이지는 기본 무료 곡이므로 항상 보유한 것으로 처리
-    if (stageNumber == 1) {
-      return true;
-    }
-
-    // 1) 기본 스테이지 ID 판정 (예: stage_1, stage_2 ...)
-    if (_ownedSongs.contains('stage_$stageNumber')) {
-      return true;
-    }
-
-    // 2) 소유한 곡 목록 중에서 상점 곡 이름이나 매칭되는 ID 검사
+    final song = ShopData.allSongs.firstWhere(
+      (s) => s.stageNumber == stageNumber,
+      orElse: () => ShopData.allSongs.first,
+    );
+    if (song.isBasic) return true;
+    if (_ownedSongs.contains('stage_$stageNumber')) return true;
     for (final ownedId in _ownedSongs) {
       if (ownedId.startsWith('stage_')) continue;
-
       if (stageTitle != null && ownedId.toLowerCase().contains(stageTitle.toLowerCase().replaceAll(' ', '_'))) {
         return true;
       }
     }
-
     return false;
   }
 
@@ -93,18 +97,24 @@ class UserProvider extends ChangeNotifier {
 
   Future<bool> purchaseSong(String itemId, int cost) async {
     if (_ownedSongs.contains(itemId)) return false;
-
+    for (final song in ShopData.allSongs) {
+      if (song.isBasic && song.type == 'music' &&
+          (itemId == 'stage_${song.stageNumber}' ||
+           itemId.toLowerCase() == 'music_${song.name.toLowerCase().replaceAll(" ", "_")}')) {
+        _ownedSongs.add(itemId);
+        try { await _db.addOwnedItem(_userId, itemId, 'song'); } catch (e) { rethrow; }
+        notifyListeners();
+        return true;
+      }
+    }
     final coinSuccess = await spendCoins(cost);
     if (!coinSuccess) return false;
-
     try {
       await _db.addOwnedItem(_userId, itemId, 'song');
     } catch (e) {
-      // 데이터베이스 저장 실패 시 코인 환불
       await addCoins(cost);
       rethrow;
     }
-
     _ownedSongs.add(itemId);
     notifyListeners();
     return true;
@@ -121,7 +131,6 @@ class UserProvider extends ChangeNotifier {
     try {
       await _db.addOwnedItem(_userId, itemId, 'effect');
     } catch (e) {
-      // 데이터베이스 저장 실패 시 코인 환불
       await addCoins(cost);
       rethrow;
     }
@@ -139,7 +148,6 @@ class UserProvider extends ChangeNotifier {
       _equippedSongs.remove(itemId);
     } else {
       await _db.equipItem(_userId, itemId);
-      // 같은 타입의 다른 곡 장착 해제
       _equippedSongs.clear();
       _equippedSongs.add(itemId);
     }

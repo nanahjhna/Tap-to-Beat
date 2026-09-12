@@ -72,9 +72,8 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    // 앱이 백그라운드로 내려갈 때 (홈 버튼 등) 자동으로 일시정지
     if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
-      if (_isPlaying && !_isPaused && !_gameEnded) {
+      if (_isPlaying && !_isPaused && !_gameEnded && _stopwatch.isRunning) {
         _pauseGame();
       }
     }
@@ -128,14 +127,17 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
       await userProvider.setLastPlayedStage(_stageData?.stageNumber ?? 1);
     }
 
-    // 📌 화면이 열린 후 1초(1000ms) 동안 여유를 준 뒤 음악과 게임을 시작합니다.
     await Future.delayed(const Duration(milliseconds: 1000));
     if (!mounted || _isPaused || _gameEnded) return;
 
     try {
+      await _audioPlayer.stop(); // 재생 전 기존 플레이어 확실히 정지
       await _audioPlayer.setVolume(settingsProvider.bgmVolume);
       await _sfxPlayer.setVolume(settingsProvider.sfxVolume);
-      final soundPath = _stageData?.audioPath ?? 'sounds/basicmusic/MikoshiMayhem.mp3';
+
+      final soundPath = _stageData?.audioPath ?? 'sounds/MikoshiMayhem.mp3';
+
+      // AssetSource 경로가 정확히 전달되는지 확인 후 플레이
       await _audioPlayer.play(AssetSource(soundPath));
     } catch (e) {
       debugPrint('Audio playback error: $e');
@@ -298,7 +300,7 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
     _gameEnded = true;
     _isPlaying = false;
     _stopwatch.stop();
-    _audioPlayer.stop();
+    _audioPlayer.pause();
 
     Navigator.pushReplacementNamed(
       context,
@@ -341,7 +343,7 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
         },
         onRetry: () {
           // 다시하기 시 음악을 처음으로 돌리고 게임을 처음부터 재시작
-          _audioPlayer.stop();
+          _audioPlayer.pause();
           _initGameWorld(); // 게임 월드(노트 데이터) 재생성
           _startGame();     // 게임 상태 초기화 및 음악 처음부터 재생
         },

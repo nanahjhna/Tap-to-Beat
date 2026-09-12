@@ -75,27 +75,21 @@ class _InventoryViewState extends State<InventoryView> {
         }
       }
       
-      // 2) Shop에서 구매한 음악 (music_twilight_highway, ...)
-      // UserProvider의 _ownedSongs Set에 music_로 시작하는 ID가 있으면 표시
-      for (final id in userProvider.ownedSongs) {
-        // stage_로 시작하면 이미 above 로직에서 처리했으니 건너뜀
-        if (id.startsWith('stage_')) continue;
-        
-        // ShopData.shopMusic에서 해당 ID 매칭
-        final musicItem = ShopData.shopMusic.firstWhere(
-          (item) => item.id == id,
-          orElse: () => ShopData.shopMusic.first, // 폴백 (없는 경우 첫 곡)
-        );
-        
-        items.add(_InventoryItemData(
-          id: id,
-          name: musicItem.name,
-          desc: musicItem.desc,
-          type: 'song',
-          color: musicItem.color,
-          icon: musicItem.icon,
-          isEquipped: false, // 곡은 장착 개념 없음
-        ));
+      // 2) Shop에서 구매한 음악 + 기본곡
+      for (final item in ShopData.shopMusic) {
+        if (item.stageNumber != 0) continue;
+        if (userProvider.ownsSong(item.id)) {
+          items.add(_InventoryItemData(
+            id: item.id,
+            name: item.name,
+            desc: item.desc,
+            type: 'song',
+            color: item.color,
+            icon: item.icon,
+            isEquipped: false,
+            isBasic: item.isBasic,
+          ));
+        }
       }
     }
 
@@ -201,13 +195,15 @@ class _InventoryViewState extends State<InventoryView> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white12,
+                  color: item.isBasic
+                      ? const Color(0xFF2ED573).withValues(alpha: 0.2)
+                      : Colors.white12,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  AppTexts.get('owned'),
-                  style: const TextStyle(
-                    color: Colors.white70,
+                  item.isBasic ? '기본음악' : AppTexts.get('owned'),
+                  style: TextStyle(
+                    color: item.isBasic ? Color(0xFF2ED573) : Colors.white70,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
@@ -237,6 +233,7 @@ class _InventoryItemData {
   final Color color;
   final IconData icon;
   final bool isEquipped;
+  final bool isBasic;
 
   const _InventoryItemData({
     required this.id,
@@ -246,5 +243,6 @@ class _InventoryItemData {
     required this.color,
     required this.icon,
     required this.isEquipped,
+    this.isBasic = false,
   });
 }

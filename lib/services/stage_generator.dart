@@ -3,12 +3,12 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import '../models/stage_model.dart';
-import '../data/song_registry.dart';
+import '../models/effect_model.dart';
 
 class StageGenerator {
   static List<StageModel> get allStages {
-    return SongRegistry.allSongs
-        .map((song) => generateStage(song.id, difficulty: 'NORMAL'))
+    return ShopData.allSongs
+        .map((song) => generateStage(song.stageNumber, difficulty: 'NORMAL'))
         .toList();
   }
 
@@ -46,17 +46,15 @@ class StageGenerator {
     return difficultySpecs.containsKey(key) ? key : 'NORMAL';
   }
 
-  // 📌 맵핑 구조를 List<NoteData>로 변경하여 JSON에 저장된 lane을 그대로 사용
   static final Map<int, List<NoteData>> _chartCache = {};
 
   static Future<void> preloadCharts() async {
-    for (final song in SongRegistry.allSongs) {
+    for (final song in ShopData.allSongs) {
       if (song.chartPath != null) {
         try {
           final data = await rootBundle.loadString(song.chartPath!);
           final List<dynamic> jsonList = jsonDecode(data);
 
-          // JSON에서 timeMs와 lane을 읽어 NoteData로 변환 후 캐싱
           final notes = jsonList.map((item) {
             return NoteData(
               timeMs: item['timeMs'] as int,
@@ -64,18 +62,18 @@ class StageGenerator {
             );
           }).toList();
 
-          _chartCache[song.id] = notes;
+          _chartCache[song.stageNumber] = notes;
         } catch (e) {
-          debugPrint('Chart load error for ${song.title}: $e');
+          debugPrint('Chart load error for ${song.name}: $e');
         }
       }
     }
   }
 
   static StageModel generateStage(int stageNum, {String difficulty = 'NORMAL'}) {
-    final song = SongRegistry.allSongs.firstWhere(
-          (s) => s.id == stageNum,
-      orElse: () => SongRegistry.allSongs.first,
+    final song = ShopData.allSongs.firstWhere(
+      (s) => s.stageNumber == stageNum,
+      orElse: () => ShopData.allSongs.first,
     );
 
     final diffKey = normalizeDifficulty(difficulty);
@@ -83,7 +81,7 @@ class StageGenerator {
     final level = spec['level']!.toInt();
     final rewardMul = spec['rewardMul']!;
 
-    final cachedNotes = _chartCache[song.id];
+    final cachedNotes = _chartCache[song.stageNumber];
     if (cachedNotes != null && cachedNotes.isNotEmpty) {
       return _generateFromChart(song, diffKey, level, rewardMul, cachedNotes);
     }
@@ -91,9 +89,8 @@ class StageGenerator {
     return _generateOriginal(stageNum, diffKey, level, rewardMul, song);
   }
 
-  // 📌 JSON에 정의된 고정 노트를 난이도별 규칙에 맞춰 가져오기
   static StageModel _generateFromChart(
-      SongData song,
+      ShopItem song,
       String diffKey,
       int level,
       double rewardMul,
@@ -105,24 +102,21 @@ class StageGenerator {
     int selectedIndex = 0;
     for (int i = 0; i < targetNotes; i++) {
       if (selectedIndex >= chartNotes.length) {
-        selectedIndex = 0; // 데이터가 부족하면 처음부터 반복
+        selectedIndex = 0;
       }
 
       final sourceNote = chartNotes[selectedIndex];
 
       switch (diffKey) {
         case 'EASY':
-        // EASY 모드는 2칸씩 건너뛰며 절반 정도의 노트만 사용
           notes.add(NoteData(timeMs: sourceNote.timeMs, lane: sourceNote.lane));
           selectedIndex += 2;
           break;
         case 'HARD':
-        // HARD 모드는 모든 노트 사용 + 사이사이에 추가 노트 배치 가능
           notes.add(NoteData(timeMs: sourceNote.timeMs, lane: sourceNote.lane));
           selectedIndex += 1;
           break;
-        default: // NORMAL
-        // NORMAL 모드는 순서대로 모든 노트 사용
+        default:
           notes.add(NoteData(timeMs: sourceNote.timeMs, lane: sourceNote.lane));
           selectedIndex += 1;
           break;
@@ -130,21 +124,20 @@ class StageGenerator {
     }
 
     return StageModel(
-      stageNumber: song.id,
-      title: song.title,
-      artist: song.artist,
-      bpm: song.bpm,
+      stageNumber: song.stageNumber,
+      title: song.name,
+      artist: song.artist!,
+      bpm: song.bpm!,
       difficulty: diffKey,
       difficultyLevel: level,
-      audioPath: song.audioPath,
+      audioPath: song.audioPath!,
       notes: notes,
       rank: 'S',
-      rewardCoins: (song.baseRewardCoins * rewardMul).round(),
+      rewardCoins: (song.baseRewardCoins! * rewardMul).round(),
     );
   }
 
-  static StageModel _generateOriginal(int stageNum, String diffKey, int level, double rewardMul, SongData song) {
-    // (기존 폴백 메서드 유지)
+  static StageModel _generateOriginal(int stageNum, String diffKey, int level, double rewardMul, ShopItem song) {
     final targetNotes = (playSpecs[diffKey]!['notes']! + stageNum * 5).toInt();
     final random = Random(42 + stageNum * 10 + level);
     final notes = <NoteData>[];
@@ -153,21 +146,21 @@ class StageGenerator {
     for (int i = 0; i < targetNotes; i++) {
       final lane = random.nextInt(4);
       notes.add(NoteData(timeMs: timeMs.round(), lane: lane));
-      final beatMs = 60000 / song.bpm;
+      final beatMs = 60000 / song.bpm!;
       timeMs += beatMs / 2;
     }
 
     return StageModel(
-      stageNumber: song.id,
-      title: song.title,
-      artist: song.artist,
-      bpm: song.bpm,
+      stageNumber: song.stageNumber,
+      title: song.name,
+      artist: song.artist!,
+      bpm: song.bpm!,
       difficulty: diffKey,
       difficultyLevel: level,
-      audioPath: song.audioPath,
+      audioPath: song.audioPath!,
       notes: notes,
       rank: 'S',
-      rewardCoins: (song.baseRewardCoins * rewardMul).round(),
+      rewardCoins: (song.baseRewardCoins! * rewardMul).round(),
     );
   }
 

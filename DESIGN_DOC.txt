@@ -47,12 +47,12 @@ TapToBeat/
 │       └── ad_banner_widget.dart         # 광고 배너
 ├── assets/
 │   ├── sounds/
-│   │   ├── basicmusic/                   # 기본 배경음
-│   │   ├── shopmusic/                    # 상점 음악
+│   │   ├──                    # 기본 배경음
+│   │   ├──                     # 상점 음악
 │   │   └── sfx/                          # 효과음 (hit.wav, start.mp3, clear.mp3)
 │   ├── charts/                           # 차트 JSON 파일
-│   │   ├── basicmusic/
-│   │   └── shopmusic/
+│   │   ├──
+│   │   └──
 │   ├── images/
 │   └── icon/
 ├── tools/
@@ -400,17 +400,17 @@ class SongData {
 9.2 assets/ 폴더 구조
 ----------------------
 assets/sounds/
-  basicmusic/   → MikoshiMayhem.mp3
-  shopmusic/    → TwilightHighway.mp3
+     → MikoshiMayhem.mp3
+      → TwilightHighway.mp3
   sfx/          → hit.wav, start.mp3, clear.mp3
 assets/charts/
-  basicmusic/   → MikoshiMayhem.json (110개 비트)
-  shopmusic/    → TwilightHighway.json (110개 비트)
+     → MikoshiMayhem.json (110개 비트)
+      → TwilightHighway.json (110개 비트)
 
 9.3 pubspec.yaml 핵심 항목
 ---------------------------
 - 의존성: audioplayers, flame, provider, shared_preferences, sqflite, google_mobile_ads, upgrader
-- 자산: assets/images/, assets/sounds/basicmusic/, assets/sounds/shopmusic/, assets/charts/basicmusic/, assets/charts/shopmusic/
+- 자산: assets/images/, assets/sounds/, assets/sounds/, assets/charts/, assets/charts/
 
 
 

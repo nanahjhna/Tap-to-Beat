@@ -101,10 +101,8 @@ flutter:
 
   assets:
     - assets/images/
-    - assets/sounds/basicmusic/
-    - assets/sounds/shopmusic/
-    - assets/charts/basicmusic/
-    - assets/charts/shopmusic/
+    - assets/sounds/
+    - assets/charts/
 
 flutter_launcher_icons:
   image_path: "assets/icon/icon.png" # 또는 실제 아이콘 이미지 파일 경로
