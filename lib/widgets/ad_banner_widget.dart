@@ -12,7 +12,7 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
   BannerAd? _bannerAd;
   bool _isAdLoaded = false;
 
-  String get _adUnitId => 'ca-app-pub-1474045642143501/6839518273';
+  String get _adUnitId => '';
 
   @override
   void initState() {

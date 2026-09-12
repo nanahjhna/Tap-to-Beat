@@ -22,7 +22,6 @@ class GamePlayView extends StatefulWidget {
 
 class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver {
   late final AudioPlayer _audioPlayer;
-  late final AudioPlayer _sfxPlayer;
   late final Stopwatch _stopwatch;
 
   final List<bool> _keyActive = [false, false, false, false];
@@ -64,9 +63,21 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _audioPlayer = AudioPlayer();
-    _sfxPlayer = AudioPlayer(playerId: 'hit_sfx')
-      ..setPlayerMode(PlayerMode.lowLatency);
     _stopwatch = Stopwatch();
+
+    // 📌 게임 도중 설정(볼륨 등) 변경 시 실시간 반영을 위한 리스너 등록
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<SettingsProvider>().addListener(_onSettingsChanged);
+      }
+    });
+  }
+
+  // 📌 설정 변경 시 실시간 반영 콜백
+  void _onSettingsChanged() {
+    if (!mounted) return;
+    final settingsProvider = context.read<SettingsProvider>();
+    _audioPlayer.setVolume(settingsProvider.bgmVolume);
   }
 
   @override
@@ -127,18 +138,23 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
       await userProvider.setLastPlayedStage(_stageData?.stageNumber ?? 1);
     }
 
+    final soundPath = _stageData?.audioPath ?? 'sounds/MikoshiMayhem.mp3';
+
+    try {
+      await _audioPlayer.setVolume(settingsProvider.bgmVolume);
+
+      // 오디오 버퍼링 지연 및 싱크 어긋남 방지를 위해 소스 선적재 후 재생
+      await _audioPlayer.setSource(AssetSource(soundPath));
+    } catch (e) {
+      debugPrint('Audio load error: $e');
+    }
+
+    // 1초 대기 (시작 연출)
     await Future.delayed(const Duration(milliseconds: 1000));
     if (!mounted || _isPaused || _gameEnded) return;
 
     try {
-      await _audioPlayer.stop(); // 재생 전 기존 플레이어 확실히 정지
-      await _audioPlayer.setVolume(settingsProvider.bgmVolume);
-      await _sfxPlayer.setVolume(settingsProvider.sfxVolume);
-
-      final soundPath = _stageData?.audioPath ?? 'sounds/MikoshiMayhem.mp3';
-
-      // AssetSource 경로가 정확히 전달되는지 확인 후 플레이
-      await _audioPlayer.play(AssetSource(soundPath));
+      await _audioPlayer.resume();
     } catch (e) {
       debugPrint('Audio playback error: $e');
     }
@@ -253,15 +269,8 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
         _countBad++;
         _handleMiss(isBad: true);
       }
-      _playSfx();
       setState(() {});
     }
-  }
-
-  void _playSfx() {
-    try {
-      _sfxPlayer.play(AssetSource('sounds/hit.wav'), mode: PlayerMode.lowLatency);
-    } catch (_) {}
   }
 
   void _addCombo() {
@@ -328,24 +337,16 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
     _stopwatch.stop();
     _audioPlayer.pause();
 
-    // 📌 PauseOverlay 호출 부분 수정
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => PauseOverlay(
-        onPause: () {
-          // 일시정지 시 음악 멈춤
-          _audioPlayer.pause();
-        },
         onResume: () {
-          // 카운트다운 끝난 후 이어서 재생 (`_resumeGame` 메서드 활용)
           _resumeGame();
         },
         onRetry: () {
-          // 다시하기 시 음악을 처음으로 돌리고 게임을 처음부터 재시작
-          _audioPlayer.pause();
-          _initGameWorld(); // 게임 월드(노트 데이터) 재생성
-          _startGame();     // 게임 상태 초기화 및 음악 처음부터 재생
+          _initGameWorld();
+          _startGame();
         },
       ),
     );
@@ -361,17 +362,19 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    try {
+      context.read<SettingsProvider>().removeListener(_onSettingsChanged);
+    } catch (_) {}
+
     _judgeClearTimer?.cancel();
     _stopwatch.stop();
     _audioPlayer.dispose();
-    _sfxPlayer.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // 📌 PopScope를 통해 뒤로가기 버튼이나 제스처로 게임이 바로 닫히지 않고 일시정지창이 뜨도록 제어
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -415,19 +418,19 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
                                   decoration: BoxDecoration(
                                     gradient: _keyActive[index] && _gameWorld != null
                                         ? LinearGradient(
-                                            begin: Alignment.topCenter,
-                                            end: Alignment.bottomCenter,
-                                            colors: [
-                                              _gameWorld!.noteColor.withValues(alpha: 0.5),
-                                              _gameWorld!.noteColor.withValues(alpha: 0.2),
-                                            ],
-                                          )
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        _gameWorld!.noteColor.withValues(alpha: 0.5),
+                                        _gameWorld!.noteColor.withValues(alpha: 0.2),
+                                      ],
+                                    )
                                         : null,
                                     color: _keyActive[index] && _gameWorld == null
                                         ? Colors.white.withValues(alpha: 0.08)
                                         : (index % 2 == 0
-                                            ? const Color(0xFF14141E)
-                                            : const Color(0xFF1A1A26)),
+                                        ? const Color(0xFF14141E)
+                                        : const Color(0xFF1A1A26)),
                                     border: Border(
                                       right: BorderSide(
                                         color: index < 3 ? Colors.white12 : Colors.transparent,
@@ -578,13 +581,13 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
                 decoration: BoxDecoration(
                   gradient: isActive && _gameWorld != null
                       ? LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            _gameWorld!.noteColor.withValues(alpha: 0.7),
-                            _gameWorld!.noteColor.withValues(alpha: 0.3),
-                          ],
-                        )
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      _gameWorld!.noteColor.withValues(alpha: 0.7),
+                      _gameWorld!.noteColor.withValues(alpha: 0.3),
+                    ],
+                  )
                       : null,
                   color: isActive && _gameWorld == null
                       ? Colors.white.withValues(alpha: 0.28)

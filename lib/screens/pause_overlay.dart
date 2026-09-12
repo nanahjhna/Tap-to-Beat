@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 import '../utils/app_texts.dart';
 
 class PauseOverlay extends StatelessWidget {
-  const PauseOverlay({super.key, this.onResume, this.onPause, this.onRetry});
+  const PauseOverlay({super.key, this.onResume, this.onRetry});
   final VoidCallback? onResume;
-  final VoidCallback? onPause;
-  final VoidCallback? onRetry; // 📌 다시하기 콜백 추가
+  final VoidCallback? onRetry;
 
   Future<void> _handleResume(BuildContext context) async {
     Navigator.pop(context); // 일시정지 팝업 닫기
+
+    if (!context.mounted) return;
 
     // 화면 중앙에 3, 2, 1 카운트다운 다이얼로그 띄우기
     await showDialog(
@@ -19,12 +20,11 @@ class PauseOverlay extends StatelessWidget {
       builder: (context) => const _CountdownDialog(),
     );
 
-    onResume?.call(); // 📌 카운트다운 끝난 후 음악 및 게임 재개
+    onResume?.call(); // 카운트다운 끝난 후 음악 및 게임 재개
   }
 
   @override
   Widget build(BuildContext context) {
-    onPause?.call(); // 팝업이 뜨는 순간 음악 정지
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -65,13 +65,15 @@ class PauseOverlay extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFFD166),
                   foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 onPressed: () => _handleResume(context),
                 child: Text(AppTexts.get('resume'), style: const TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
             const SizedBox(height: 8),
-            // 📌 다시하기 버튼 (팝업 닫고 음악/게임 초기화 후 처음부터 재생)
+            // 다시하기 버튼
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
@@ -82,8 +84,8 @@ class PauseOverlay extends StatelessWidget {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 onPressed: () {
-                  Navigator.pop(context); // 일시정지 팝업 닫기
-                  onRetry?.call();        // 📌 다시하기 함수 호출
+                  Navigator.pop(context);
+                  onRetry?.call();
                 },
                 child: Text(AppTexts.get('retry')),
               ),
@@ -114,6 +116,8 @@ class PauseOverlay extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF4757).withValues(alpha: 0.85),
                   foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 onPressed: () {
                   Navigator.pushNamedAndRemoveUntil(
