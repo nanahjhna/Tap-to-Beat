@@ -148,8 +148,9 @@ class RhythmGameWorld extends FlameGame {
   final List<RhythmNoteComponent> noteComponents = [];
   Color noteColor;
 
-  Color judgeLineColor = const Color(0xFFFFFA65);
-  DateTime? _flashRedUntil;
+  Color judgeLineColor = const Color(0xFFFFFFFF);
+  Color? _flashColor;
+  DateTime? _flashColorUntil;
 
   double _trailAccumulator = 0;
 
@@ -160,8 +161,9 @@ class RhythmGameWorld extends FlameGame {
     required this.noteColor,
   });
 
-  void flashRed(Duration duration) {
-    _flashRedUntil = DateTime.now().add(duration);
+  void flashJudgeLine(Color color, Duration duration) {
+    _flashColor = color;
+    _flashColorUntil = DateTime.now().add(duration);
   }
 
   void spawnHitParticles(Vector2 position, {Color? color}) {
@@ -210,43 +212,26 @@ class RhythmGameWorld extends FlameGame {
     final currentMs = getEffectiveMs();
     final trackWidth = boardWidth / 4.0;
 
-    if (_flashRedUntil != null && DateTime.now().isAfter(_flashRedUntil!)) {
-      _flashRedUntil = null;
+    if (_flashColorUntil != null && DateTime.now().isAfter(_flashColorUntil!)) {
+      _flashColor = null;
+      _flashColorUntil = null;
     }
 
     _spawnTrails(dt, trackWidth);
     _updateNotes(currentMs);
 
-    if (_flashRedUntil != null) {
-      judgeLineColor = const Color(0xFFFF4757);
-    } else if (hasNoteAtJudgeLine) {
-      judgeLineColor = const Color(0xFF2ED573);
-    } else if (hasMissedNote) {
-      judgeLineColor = const Color(0xFFFF4757);
+    if (_flashColor != null && _flashColorUntil != null) {
+      judgeLineColor = _flashColor!;
     } else {
-      judgeLineColor = const Color(0xFFFFFA65);
+      judgeLineColor = const Color(0xFFFFFFFF);
     }
   }
 
-  bool hasNoteAtJudgeLine = false;
-  bool hasMissedNote = false;
-
   void _updateNotes(double currentMs) {
-    hasNoteAtJudgeLine = false;
-    hasMissedNote = false;
-
     for (final note in noteComponents) {
-      if (note.isMissed) {
-        hasMissedNote = true;
-      }
       if (note.isHit || note.isMissed) {
         note.position.y = -999;
         continue;
-      }
-
-      final diff = (currentMs - note.targetTimeMs).abs();
-      if (diff < 200) {
-        hasNoteAtJudgeLine = true;
       }
 
       final noteStartTime = note.targetTimeMs - fallDurationMs;

@@ -29,6 +29,8 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
   late final Animation<double> _judgeFadeAnim;
   late final AnimationController _laneFlashController;
   late final AnimationController _bgPulseController;
+  late final AnimationController _comboPopController;
+  late final Animation<double> _comboScaleAnim;
 
   final List<bool> _keyActive = [false, false, false, false];
   int _laneFlashIndex = -1;
@@ -56,7 +58,7 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
     LogicalKeyboardKey.keyJ,
     LogicalKeyboardKey.keyK,
   ];
-  static const List<String> _keyLabels = ['D', 'F', 'J', 'K'];
+  static const List<String> _keyLabels = ['', '', '', ''];
 
   StageModel? _stageData;
   RhythmGameWorld? _gameWorld;
@@ -89,6 +91,22 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
+    _comboPopController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+    );
+    _comboScaleAnim = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.0, end: 1.4)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 35,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.4, end: 1.0)
+            .chain(CurveTween(curve: Curves.easeOutBack)),
+        weight: 65,
+      ),
+    ]).animate(_comboPopController);
 
     // 📌 게임 도중 설정(볼륨 등) 변경 시 실시간 반영을 위한 리스너 등록
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -239,6 +257,8 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
     return defaultColor;
   }
 
+  Color _judgeLineColor() => _gameWorld?.judgeLineColor ?? Colors.white;
+
   void _handleKeyPress(int trackIdx) {
     if (!_isPlaying || _isPaused || _gameEnded) return;
 
@@ -281,6 +301,10 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
 
       if (minDiff <= perfectMs) {
         _showJudgment('PERFECT', const Color(0xFF2ED573));
+        _gameWorld!.flashJudgeLine(
+          const Color(0xFF2ED573),
+          const Duration(milliseconds: 300),
+        );
         _bgPulseController.forward(from: 0);
         _score += 300;
         _life = (_life + healPerfect).clamp(0.0, 100.0);
@@ -305,10 +329,30 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
   void _addCombo() {
     _combo++;
     if (_combo > _maxCombo) _maxCombo = _combo;
+    _comboPopController.forward(from: 0);
+  }
+
+  ({double fontSize, Color color, String? label}) _comboStyle() {
+    if (_combo >= 100) {
+      return (fontSize: 64, color: const Color(0xFFFFD166), label: 'GODLIKE!');
+    }
+    if (_combo >= 50) {
+      return (fontSize: 58, color: const Color(0xFF9B59B6), label: 'UNBELIEVABLE!');
+    }
+    if (_combo >= 25) {
+      return (fontSize: 52, color: const Color(0xFFFF4757), label: 'AMAZING!');
+    }
+    if (_combo >= 10) {
+      return (fontSize: 44, color: const Color(0xFFFF6B81), label: 'AWESOME!');
+    }
+    return (fontSize: 34, color: const Color(0xFFFFA502), label: null);
   }
 
   void _handleMiss({bool isBad = false}) {
-    _gameWorld?.flashRed(const Duration(milliseconds: 300));
+    _gameWorld?.flashJudgeLine(
+      const Color(0xFFFF4757),
+      const Duration(milliseconds: 300),
+    );
     _combo = 0;
     final missDmg = StageGenerator.playValue(_difficulty, 'missDmg');
     final badDmg = StageGenerator.playValue(_difficulty, 'badDmg');
@@ -403,6 +447,7 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
     _judgeAnimController.dispose();
     _laneFlashController.dispose();
     _bgPulseController.dispose();
+    _comboPopController.dispose();
     _audioPlayer.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -443,6 +488,10 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
                       Positioned.fill(
                         child: Row(
                           children: List.generate(4, (index) {
+                            final laneColor = index == 0 || index == 2
+                                ? const Color(0xFFFF6B81)
+                                : const Color(0xFF70A1FF);
+
                             return Expanded(
                               child: GestureDetector(
                                 behavior: HitTestBehavior.opaque,
@@ -454,25 +503,27 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
                                   children: [
                                     Container(
                                       decoration: BoxDecoration(
-                                        gradient: _keyActive[index] && _gameWorld != null
+                                        gradient: _keyActive[index]
                                             ? LinearGradient(
                                           begin: Alignment.topCenter,
                                           end: Alignment.bottomCenter,
                                           colors: [
-                                            _gameWorld!.noteColor.withValues(alpha: 0.5),
-                                            _gameWorld!.noteColor.withValues(alpha: 0.2),
+                                            laneColor.withValues(alpha: 0.7),
+                                            laneColor.withValues(alpha: 0.2),
                                           ],
                                         )
-                                            : null,
-                                        color: _keyActive[index] && _gameWorld == null
-                                            ? Colors.white.withValues(alpha: 0.08)
-                                            : (index % 2 == 0
-                                            ? const Color(0xFF14141E)
-                                            : const Color(0xFF1A1A26)),
+                                            : LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            const Color(0xFF1E1E2C).withValues(alpha: 0.8),
+                                            const Color(0xFF111118).withValues(alpha: 0.95),
+                                          ],
+                                        ),
                                         border: Border(
                                           right: BorderSide(
-                                            color: index < 3 ? Colors.white12 : Colors.transparent,
-                                            width: 1,
+                                            color: Colors.white.withValues(alpha: 0.3),
+                                            width: 1.5,
                                           ),
                                         ),
                                       ),
@@ -483,16 +534,14 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
                                           animation: _laneFlashController,
                                           builder: (context, _) {
                                             final v = 1 - _laneFlashController.value;
-                                            final flashColor = _gameWorld?.noteColor ?? const Color(0xFFFFFA65);
                                             return Container(
                                               decoration: BoxDecoration(
                                                 gradient: LinearGradient(
                                                   begin: Alignment.topCenter,
                                                   end: Alignment.bottomCenter,
                                                   colors: [
-                                                    flashColor.withValues(alpha: 0.55 * v),
-                                                    Colors.white.withValues(alpha: 0.35 * v),
-                                                    flashColor.withValues(alpha: 0.25 * v),
+                                                    laneColor.withValues(alpha: 0.8 * v),
+                                                    Colors.white.withValues(alpha: 0.5 * v),
                                                   ],
                                                 ),
                                               ),
@@ -543,14 +592,20 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
                         bottom: 80,
                         child: IgnorePointer(
                           child: Container(
-                            height: 6,
+                            height: 8,
                             decoration: BoxDecoration(
-                              color: _gameWorld?.judgeLineColor ?? const Color(0xFFFFFA65),
+                              color: _judgeLineColor(),
+                              borderRadius: BorderRadius.circular(4),
                               boxShadow: [
                                 BoxShadow(
-                                  color: (_gameWorld?.judgeLineColor ?? const Color(0xFFFFFA65)).withValues(alpha: 0.8),
-                                  blurRadius: 15,
+                                  color: _judgeLineColor().withValues(alpha: 0.8),
+                                  blurRadius: 12,
                                   spreadRadius: 2,
+                                ),
+                                BoxShadow(
+                                  color: _judgeLineColor().withValues(alpha: 0.8),
+                                  blurRadius: 20,
+                                  spreadRadius: 4,
                                 ),
                               ],
                             ),
@@ -575,27 +630,70 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
                                       child: child,
                                     ),
                                   ),
-                                  child: Text(
-                                    _currentJudge,
-                                    style: TextStyle(
-                                      fontSize: 26,
-                                      fontWeight: FontWeight.w900,
-                                      color: _judgeColor,
-                                      shadows: [
-                                        Shadow(color: _judgeColor.withValues(alpha: 0.8), blurRadius: 16),
+                                  child: ShaderMask(
+                                    blendMode: BlendMode.srcATop,
+                                    shaderCallback: (bounds) => LinearGradient(
+                                      colors: [
+                                        Colors.white,
+                                        _judgeColor,
+                                        Colors.white,
                                       ],
+                                    ).createShader(bounds),
+                                    child: Text(
+                                      _currentJudge,
+                                      style: TextStyle(
+                                        fontSize: _currentJudge == 'PERFECT' ? 34 : 26,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 3,
+                                        color: Colors.white,
+                                        shadows: [
+                                          Shadow(color: _judgeColor.withValues(alpha: 0.9), blurRadius: 20),
+                                          Shadow(color: _judgeColor.withValues(alpha: 0.7), blurRadius: 40),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
                               const SizedBox(height: 6),
                               if (_combo > 1)
-                                Text(
-                                  '$_combo COMBO',
-                                  style: const TextStyle(
-                                    fontSize: 34,
-                                    fontWeight: FontWeight.w900,
-                                    color: Color(0xFFFFA502),
-                                  ),
+                                AnimatedBuilder(
+                                  animation: _comboPopController,
+                                  builder: (context, _) {
+                                    final style = _comboStyle();
+                                    return Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (style.label != null)
+                                          Text(
+                                            style.label!,
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w900,
+                                              color: style.color,
+                                              letterSpacing: 2,
+                                              shadows: [
+                                                Shadow(color: style.color.withValues(alpha: 0.7), blurRadius: 12),
+                                              ],
+                                            ),
+                                          ),
+                                        Transform.scale(
+                                          scale: _comboScaleAnim.value,
+                                          child: Text(
+                                            '$_combo COMBO',
+                                            style: TextStyle(
+                                              fontSize: style.fontSize,
+                                              fontWeight: FontWeight.w900,
+                                              color: style.color,
+                                              shadows: [
+                                                Shadow(color: style.color.withValues(alpha: 0.9), blurRadius: 18),
+                                                Shadow(color: Colors.white.withValues(alpha: 0.6), blurRadius: 8),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
                                 ),
                             ],
                           ),
@@ -693,9 +791,17 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
                       : Colors.transparent,
                   border: Border(
                     top: BorderSide(
-                      color: isActive ? const Color(0xFFFFFA65) : const Color(0xFF444444),
+                      color: isActive ? const Color(0xFFFFFA65) : Colors.white.withValues(alpha: 0.35),
                       width: 2.5,
                     ),
+                    bottom: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      width: 1,
+                    ),
+                    left: index == 0
+                        ? BorderSide.none
+                        : BorderSide(color: Colors.white.withValues(alpha: 0.2), width: 1),
+                    right: BorderSide.none,
                   ),
                 ),
                 child: Center(
