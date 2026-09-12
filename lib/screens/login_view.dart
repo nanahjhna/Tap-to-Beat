@@ -5,10 +5,11 @@ import '../utils/app_texts.dart';
 class LoginView extends StatelessWidget {
   const LoginView({super.key});
 
-  // TODO: 실제 프로젝트에서는 SharedPreferences나 secure_storage 등을 사용하여 로그인 상태 및 제공자(Google, Guest)를 로컬에 저장하세요.
-  // 예시: final prefs = await SharedPreferences.getInstance(); await prefs.setString('login_provider', label);
-
-  Future<void> _handleLogin(BuildContext context, String provider, String label) async {
+  Future<void> _handleLogin(
+    BuildContext context,
+    String provider,
+    String label,
+  ) async {
     await UserSession.saveLoginProvider(provider);
     if (!context.mounted) return;
     Navigator.pushReplacementNamed(context, '/main');
@@ -18,31 +19,103 @@ class LoginView extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(automaticallyImplyLeading: false, title: Text(AppTexts.get('login'))),
-    body: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget build(BuildContext context) {
+    final content = SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 28),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Spacer(flex: 2),
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(22),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFFFD166).withValues(alpha: 0.12),
+                  border: Border.all(
+                    color: const Color(0xFFFFD166).withValues(alpha: 0.5),
+                    width: 2,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.account_circle,
+                  color: Color(0xFFFFD166),
+                  size: 64,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              AppTexts.get('login'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              AppTexts.get('loginGuideUpdated'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white60,
+                fontSize: 14,
+                height: 1.5,
+              ),
+            ),
+            const Spacer(flex: 2),
+            ElevatedButton.icon(
+              onPressed: () =>
+                  _handleLogin(context, 'guest', AppTexts.get('guest')),
+              icon: const Icon(Icons.person_outline),
+              label: Text(
+                AppTexts.get('guest'),
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFD166),
+                foregroundColor: Colors.black,
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () =>
+                  _handleLogin(context, 'google', AppTexts.get('googleLogin')),
+              icon: const Icon(Icons.g_mobiledata),
+              label: Text(
+                AppTexts.get('googleLogin'),
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white,
+                side: const BorderSide(color: Colors.white24),
+              ),
+            ),
+            const Spacer(),
+          ],
+        ),
+      ),
+    );
+
+    return Scaffold(
+      body: Stack(
+        fit: StackFit.expand,
         children: [
-          const Spacer(),
-          const Icon(Icons.account_circle, size: 90),
-          const SizedBox(height: 16),
-          Text(AppTexts.get('loginGuideUpdated'), textAlign: TextAlign.center),
-          const SizedBox(height: 30),
-          _button(context, 'guest', AppTexts.get('guest'), Icons.person_outline),
-          const Spacer(),
+          Container(
+            decoration: const BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment(0, -0.2),
+                radius: 1.2,
+                colors: [Color(0xFF2A2460), Color(0xFF121024)],
+              ),
+            ),
+          ),
+          content,
         ],
       ),
-    ),
-  );
-
-  Widget _button(BuildContext context, String provider, String label, IconData icon) => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
-    child: ElevatedButton.icon(
-      onPressed: () => _handleLogin(context, provider, label),
-      icon: Icon(icon),
-      label: Text(label),
-    ),
-  );
+    );
+  }
 }

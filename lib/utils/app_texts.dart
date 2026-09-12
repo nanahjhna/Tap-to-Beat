@@ -3,7 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class AppTexts {
   static String _currentLang = '한국어';
-  static final ValueNotifier<String> languageNotifier = ValueNotifier(_currentLang);
+  static final ValueNotifier<String> languageNotifier = ValueNotifier(
+    _currentLang,
+  );
 
   // 📌 저장된 언어 불러오기 (앱이 켜질 때 호출)
   static Future<void> loadLanguage() async {
@@ -101,6 +103,7 @@ class AppTexts {
       'attendance7Days': '7일 비트 출석 보상',
       'dayUnit': '일',
       'claimTodayReward': '오늘 보상 받기',
+      'attendanceDoneToday': '오늘 출석 완료',
       'noticeEvent1': 'TapToBeat 리듬 출시 기념 이벤트',
       'noticeUpdate1': 'Mikoshi Mayhem 트랙 업데이트',
       'termsOfService': '서비스 이용 약관',
@@ -168,7 +171,8 @@ class AppTexts {
       'linkAccount': 'Link Account',
       'link': 'Link',
       'linkStarted': 'Starting account link flow.',
-      'accountLinkDesc': 'Link your account to keep your data safe across devices.',
+      'accountLinkDesc':
+          'Link your account to keep your data safe across devices.',
 
       // Stage & Rhythm Play
       'selectStage': 'Select Track',
@@ -214,10 +218,12 @@ class AppTexts {
       'attendance7Days': '7-Day Beat Attendance',
       'dayUnit': ' Day',
       'claimTodayReward': 'Claim Today\'s Reward',
+      'attendanceDoneToday': 'Attendance Done Today',
       'noticeEvent1': 'TapToBeat Rhythm Launch Event',
       'noticeUpdate1': 'Mikoshi Mayhem Track Update',
       'termsOfService': 'Terms of Service',
-      'noticeContent': 'Thank you for playing TapToBeat. Enjoy high-energy 4-button rhythm action!',
+      'noticeContent':
+          'Thank you for playing TapToBeat. Enjoy high-energy 4-button rhythm action!',
 
       // Settings & Sound & Sync
       'bgmVolume': 'BGM Volume',
@@ -226,14 +232,16 @@ class AppTexts {
       'timingSyncDesc': 'Adjust audio latency in milliseconds.',
       'credits': 'Credits',
       'privacyPolicy': 'Privacy Policy',
-      'creditsDesc': 'The original creators of the tracks featured in this game.',
+      'creditsDesc':
+          'The original creators of the tracks featured in this game.',
 
       // Additional keys
       'adWatchOnce': '+ 1 Ad',
       'allMusicOwned': 'You own all music!',
       'basicMusic': 'Free Track',
       'bonus': 'Bonus',
-      'googleSyncDesc': 'Sync your game progress and data with your Google account.',
+      'googleSyncDesc':
+          'Sync your game progress and data with your Google account.',
       'coinsEarned': 'Earned!',
       'quickPlay': 'QUICK PLAY',
       'updateRequired': 'Update Required',
@@ -327,10 +335,12 @@ class AppTexts {
       'attendance7Days': '7日連続出席報酬',
       'dayUnit': '日目',
       'claimTodayReward': '今日の報酬を受け取る',
+      'attendanceDoneToday': '今日の出席完了',
       'noticeEvent1': 'TapToBeat正式リリース記念',
       'noticeUpdate1': 'Mikoshi Mayhemトラック更新',
       'termsOfService': '利用規約',
-      'noticeContent': 'TapToBeatをプレイしていただきありがとうございます。爽快な4ボタンリズムアクションをお楽しみください！',
+      'noticeContent':
+          'TapToBeatをプレイしていただきありがとうございます。爽快な4ボタンリズムアクションをお楽しみください！',
 
       // 設定 & サウンド & シンク
       'bgmVolume': 'BGM音量',

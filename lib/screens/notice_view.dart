@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 import '../widgets/game_bottom_navigation.dart';
 import '../widgets/game_header.dart';
 import '../utils/app_texts.dart';
@@ -10,14 +12,86 @@ class NoticeView extends StatefulWidget {
   State<NoticeView> createState() => _NoticeViewState();
 }
 
-class _NoticeViewState extends State<NoticeView> with SingleTickerProviderStateMixin {
+class _NoticeViewState extends State<NoticeView>
+    with SingleTickerProviderStateMixin {
   late final TabController _tab = TabController(length: 2, vsync: this);
-  bool received = false;
+
+  static const List<int> _rewards = [50, 100, 150, 200, 250, 300, 500];
+  final Set<String> _claimed = {};
+  DateTime? _lastClaim;
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAttendance();
+  }
 
   @override
   void dispose() {
     _tab.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadAttendance() async {
+    final userProvider = context.read<UserProvider>();
+    for (int i = 1; i <= 7; i++) {
+      if (await userProvider.isQuestClaimed('attendance_$i')) {
+        _claimed.add('attendance_$i');
+      }
+    }
+    final last = await userProvider.getLastAttendanceClaimDate();
+    if (!mounted) return;
+    setState(() {
+      _lastClaim = last;
+      _loaded = true;
+    });
+  }
+
+  // 연속 출석 기준으로 다음 청구 가능한 일차
+  int get _nextDay {
+    for (int i = 1; i <= 7; i++) {
+      if (!_claimed.contains('attendance_$i')) return i;
+    }
+    return 8;
+  }
+
+  bool get _alreadyClaimedToday {
+    final now = DateTime.now();
+    final last = _lastClaim;
+    return last != null &&
+        last.year == now.year &&
+        last.month == now.month &&
+        last.day == now.day;
+  }
+
+  bool get _canClaimToday => _loaded && _nextDay <= 7 && !_alreadyClaimedToday;
+
+  Future<void> _claimToday() async {
+    final userProvider = context.read<UserProvider>();
+    final day = _nextDay;
+    final reward = _rewards[day - 1];
+    await userProvider.claimQuest('attendance_$day');
+    await userProvider.addCoins(reward);
+    if (!mounted) return;
+    setState(() {
+      _claimed.add('attendance_$day');
+      _lastClaim = DateTime.now();
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '$day${AppTexts.get('dayUnit')} +$reward ${AppTexts.get('coins')}',
+        ),
+      ),
+    );
+  }
+
+  String _buttonLabel() {
+    if (!_loaded) return AppTexts.get('checking');
+    if (_nextDay > 7) return AppTexts.get('claimed');
+    if (_alreadyClaimedToday) return AppTexts.get('attendanceDoneToday');
+    return AppTexts.get('claimTodayReward');
   }
 
   @override
@@ -26,9 +100,7 @@ class _NoticeViewState extends State<NoticeView> with SingleTickerProviderStateM
     body: SafeArea(
       child: Column(
         children: [
-          // 📌 titleKey 필수 파라미터 추가
           const GameHeader(titleKey: ''),
-
           Container(
             color: const Color(0xFF1B183B),
             child: TabBar(
@@ -42,7 +114,6 @@ class _NoticeViewState extends State<NoticeView> with SingleTickerProviderStateM
               ],
             ),
           ),
-
           Expanded(
             child: TabBarView(
               controller: _tab,
@@ -75,45 +146,91 @@ class _NoticeViewState extends State<NoticeView> with SingleTickerProviderStateM
         const SizedBox(height: 10),
         Text(
           AppTexts.get('attendance7Days'),
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 4),
+        Text(
+          '${_claimed.length} / 7',
+          style: const TextStyle(
+            fontSize: 13,
+            color: Color(0xFFFFD166),
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 16),
         GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           crossAxisCount: 4,
           mainAxisSpacing: 8,
           crossAxisSpacing: 8,
-          children: List.generate(
-            7,
-                (i) => Card(
-              color: i == 0 ? const Color(0xFFFFD166) : const Color(0xFF2E266D),
-              child: Center(
-                child: Text(
-                  '${i + 1}${AppTexts.get('dayUnit')}\n🎁',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: i == 0 ? Colors.black : Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+          childAspectRatio: 0.85,
+          children: List.generate(7, (i) {
+            final day = i + 1;
+            final claimed = _claimed.contains('attendance_$day');
+            final isNext = day == _nextDay;
+            return Container(
+              decoration: BoxDecoration(
+                color: claimed
+                    ? const Color(0xFF2ED573).withValues(alpha: 0.25)
+                    : isNext && _canClaimToday
+                    ? const Color(0xFFFFD166).withValues(alpha: 0.18)
+                    : const Color(0xFF2E266D),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: claimed
+                      ? const Color(0xFF2ED573)
+                      : isNext && _canClaimToday
+                      ? const Color(0xFFFFD166).withValues(alpha: 0.7)
+                      : Colors.white12,
                 ),
               ),
-            ),
-          ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '$day${AppTexts.get('dayUnit')}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    claimed ? '✓' : '+${_rewards[i]}',
+                    style: TextStyle(
+                      color: claimed ? const Color(0xFF2ED573) : Colors.white70,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
         ),
         const Spacer(),
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFD166),
-              foregroundColor: Colors.black,
+              backgroundColor: _canClaimToday
+                  ? const Color(0xFFFFD166)
+                  : Colors.white12,
+              foregroundColor: _canClaimToday ? Colors.black : Colors.white38,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-            onPressed: received ? null : () => setState(() => received = true),
+            onPressed: _canClaimToday ? _claimToday : null,
             child: Text(
-              received ? AppTexts.get('claimed') : AppTexts.get('claimTodayReward'),
+              _buttonLabel(),
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ),

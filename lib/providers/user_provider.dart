@@ -21,9 +21,11 @@ class UserProvider extends ChangeNotifier {
   bool ownsSong(String itemId) {
     if (_ownedSongs.contains(itemId)) return true;
     for (final song in ShopData.allSongs) {
-      if (song.isBasic && song.type == 'music' &&
+      if (song.isBasic &&
+          song.type == 'music' &&
           (itemId == 'stage_${song.stageNumber}' ||
-           itemId.toLowerCase() == 'music_${song.name.toLowerCase().replaceAll(" ", "_")}')) {
+              itemId.toLowerCase() ==
+                  'music_${song.name.toLowerCase().replaceAll(" ", "_")}')) {
         return true;
       }
     }
@@ -51,7 +53,10 @@ class UserProvider extends ChangeNotifier {
     if (_ownedSongs.contains('stage_$stageNumber')) return true;
     for (final ownedId in _ownedSongs) {
       if (ownedId.startsWith('stage_')) continue;
-      if (stageTitle != null && ownedId.toLowerCase().contains(stageTitle.toLowerCase().replaceAll(' ', '_'))) {
+      if (stageTitle != null &&
+          ownedId.toLowerCase().contains(
+            stageTitle.toLowerCase().replaceAll(' ', '_'),
+          )) {
         return true;
       }
     }
@@ -82,7 +87,9 @@ class UserProvider extends ChangeNotifier {
     final equippedEffects = await _db.getEquippedItems(_userId, type: 'effect');
 
     _equippedSongs = equippedSongs.map((e) => e['item_id'] as String).toSet();
-    _equippedEffects = equippedEffects.map((e) => e['item_id'] as String).toSet();
+    _equippedEffects = equippedEffects
+        .map((e) => e['item_id'] as String)
+        .toSet();
   }
 
   // ── 코인 ──
@@ -107,11 +114,17 @@ class UserProvider extends ChangeNotifier {
   Future<bool> purchaseSong(String itemId, int cost) async {
     if (_ownedSongs.contains(itemId)) return false;
     for (final song in ShopData.allSongs) {
-      if (song.isBasic && song.type == 'music' &&
+      if (song.isBasic &&
+          song.type == 'music' &&
           (itemId == 'stage_${song.stageNumber}' ||
-           itemId.toLowerCase() == 'music_${song.name.toLowerCase().replaceAll(" ", "_")}')) {
+              itemId.toLowerCase() ==
+                  'music_${song.name.toLowerCase().replaceAll(" ", "_")}')) {
         _ownedSongs.add(itemId);
-        try { await _db.addOwnedItem(_userId, itemId, 'song'); } catch (e) { rethrow; }
+        try {
+          await _db.addOwnedItem(_userId, itemId, 'song');
+        } catch (e) {
+          rethrow;
+        }
         notifyListeners();
         return true;
       }
@@ -186,19 +199,27 @@ class UserProvider extends ChangeNotifier {
   // ── 클리어 기록 ──
 
   Future<void> saveStageResult(
-      int stageId,
-      int score,
-      int maxCombo,
-      int perfect,
-      int good,
-      int bad,
-      int miss,
-      String rank,
-      bool cleared,
-      ) async {
+    int stageId,
+    int score,
+    int maxCombo,
+    int perfect,
+    int good,
+    int bad,
+    int miss,
+    String rank,
+    bool cleared,
+  ) async {
     await _db.saveStageResult(
-      _userId, stageId, score, maxCombo,
-      perfect, good, bad, miss, rank, cleared,
+      _userId,
+      stageId,
+      score,
+      maxCombo,
+      perfect,
+      good,
+      bad,
+      miss,
+      rank,
+      cleared,
     );
     _bestResults = await _db.getBestStageResults(_userId);
     notifyListeners();
@@ -208,6 +229,13 @@ class UserProvider extends ChangeNotifier {
 
   Future<int> getClearedCount() async => _db.getClearedCount(_userId);
   Future<bool> hasRankS() async => _db.hasRankS(_userId);
-  Future<bool> isQuestClaimed(String questId) async => _db.isQuestClaimed(_userId, questId);
-  Future<void> claimQuest(String questId) async => _db.claimQuest(_userId, questId);
+  Future<bool> isQuestClaimed(String questId) async =>
+      _db.isQuestClaimed(_userId, questId);
+  Future<void> claimQuest(String questId) async =>
+      _db.claimQuest(_userId, questId);
+
+  // ── 출석 (7일 연속) ──
+
+  Future<DateTime?> getLastAttendanceClaimDate() async =>
+      _db.getLastAttendanceClaimDate(_userId);
 }

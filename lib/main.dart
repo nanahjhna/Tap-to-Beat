@@ -73,7 +73,9 @@ class TapToBeatGameApp extends StatelessWidget {
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             minimumSize: const Size(0, 52),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             textStyle: const TextStyle(fontWeight: FontWeight.w800),
           ),
         ),
@@ -95,7 +97,8 @@ class TapToBeatGameApp extends StatelessWidget {
         '/main': (context) => const MainScreen(),
         '/shop': (context) => const ShopView(),
         '/settings': (context) => const SettingsView(),
-        '/stageSelect': (context) => const MainScreen(selectedTab: 1),
+        // 결과 화면 "곡 선택" 버튼 → 로비(0번 탭, 스테이지 선택)로 이동
+        '/stageSelect': (context) => const MainScreen(selectedTab: 0),
         '/gamePlay': (context) => const GamePlayView(),
         '/result': (context) => const ResultView(),
         '/inventory': (context) => const InventoryView(),

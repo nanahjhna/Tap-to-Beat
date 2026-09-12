@@ -50,12 +50,16 @@ class _TitleViewState extends State<TitleView> with TickerProviderStateMixin {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF283593),
+        backgroundColor: const Color(0xFF201D3D),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           '${AppTexts.get('language')} / Language',
           textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -77,9 +81,13 @@ class _TitleViewState extends State<TitleView> with TickerProviderStateMixin {
       width: double.infinity,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected ? const Color(0xFFFFD166) : Colors.white12,
+          backgroundColor: isSelected
+              ? const Color(0xFFFFD166)
+              : Colors.white12,
           foregroundColor: isSelected ? Colors.black : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           elevation: 0,
         ),
         onPressed: () async {
@@ -132,11 +140,20 @@ class _TitleViewState extends State<TitleView> with TickerProviderStateMixin {
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: const Color(0xFFFFD166).withValues(alpha: 0.12),
-                          border: Border.all(color: const Color(0xFFFFD166).withValues(alpha: 0.5), width: 2),
+                          color: const Color(
+                            0xFFFFD166,
+                          ).withValues(alpha: 0.12),
+                          border: Border.all(
+                            color: const Color(
+                              0xFFFFD166,
+                            ).withValues(alpha: 0.5),
+                            width: 2,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFFFD166).withValues(alpha: 0.3),
+                              color: const Color(
+                                0xFFFFD166,
+                              ).withValues(alpha: 0.3),
                               blurRadius: blurRadius,
                               spreadRadius: spreadRadius,
                             ),
@@ -159,8 +176,14 @@ class _TitleViewState extends State<TitleView> with TickerProviderStateMixin {
                       blendMode: BlendMode.srcIn,
                       shaderCallback: (bounds) {
                         return LinearGradient(
-                          begin: Alignment(-1.0 + 2.0 * _shimmerController.value, 0),
-                          end: Alignment(-0.5 + 2.0 * _shimmerController.value, 0),
+                          begin: Alignment(
+                            -1.0 + 2.0 * _shimmerController.value,
+                            0,
+                          ),
+                          end: Alignment(
+                            -0.5 + 2.0 * _shimmerController.value,
+                            0,
+                          ),
                           colors: const [
                             Color(0xFFFFD166),
                             Color(0xFFFFFFCC),
@@ -180,10 +203,7 @@ class _TitleViewState extends State<TitleView> with TickerProviderStateMixin {
                       color: Colors.white,
                       fontWeight: FontWeight.w900,
                       shadows: [
-                        Shadow(
-                          color: Color(0xFFFF8B00),
-                          blurRadius: 16,
-                        ),
+                        Shadow(color: Color(0xFFFF8B00), blurRadius: 16),
                       ],
                     ),
                   ),
@@ -206,11 +226,17 @@ class _TitleViewState extends State<TitleView> with TickerProviderStateMixin {
                         backgroundColor: const Color(0xFFFFD166),
                         foregroundColor: Colors.black,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                       ),
                       child: Text(
                         AppTexts.get('tapToStart'),
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.5,
+                        ),
                       ),
                     ),
                   ),
@@ -232,7 +258,11 @@ class _TitleViewState extends State<TitleView> with TickerProviderStateMixin {
                     onTap: () => _showLanguageDialog(context),
                     child: const Padding(
                       padding: EdgeInsets.all(11),
-                      child: Icon(Icons.language, color: Color(0xFFFFD166), size: 20),
+                      child: Icon(
+                        Icons.language,
+                        color: Color(0xFFFFD166),
+                        size: 20,
+                      ),
                     ),
                   ),
                 ),

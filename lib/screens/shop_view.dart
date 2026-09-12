@@ -7,6 +7,16 @@ import '../widgets/game_bottom_navigation.dart';
 import '../widgets/game_header.dart';
 import '../utils/app_texts.dart';
 
+ButtonStyle get _segmentedStyle => SegmentedButton.styleFrom(
+  backgroundColor: const Color(0xFF1B183B),
+  selectedBackgroundColor: const Color(0xFFFFD166),
+  selectedForegroundColor: Colors.black,
+  foregroundColor: Colors.white70,
+  side: const BorderSide(color: Colors.white12),
+  textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+  visualDensity: VisualDensity.compact,
+);
+
 class ShopView extends StatefulWidget {
   const ShopView({super.key, this.embedded = false});
   final bool embedded;
@@ -24,31 +34,47 @@ class _ShopViewState extends State<ShopView> {
     AdRewardHelper.instance.loadAd();
   }
 
-  void _showPurchaseDialog(String itemId, String itemName, int coinCost, bool requireAd) {
+  void _showPurchaseDialog(
+    String itemId,
+    String itemName,
+    int coinCost,
+    bool requireAd,
+  ) {
     final userProvider = context.read<UserProvider>();
     final canAfford = userProvider.coins >= coinCost;
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF283593),
+        backgroundColor: const Color(0xFF201D3D),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           AppTexts.get('confirmPurchase'),
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               itemName,
-              style: const TextStyle(color: Color(0xFFFFD166), fontSize: 16, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                color: Color(0xFFFFD166),
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.monetization_on, color: Color(0xFFFFD166), size: 20),
+                const Icon(
+                  Icons.monetization_on,
+                  color: Color(0xFFFFD166),
+                  size: 20,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   '$coinCost ${AppTexts.get('coins')}',
@@ -59,9 +85,16 @@ class _ShopViewState extends State<ShopView> {
                 ),
                 if (requireAd) ...[
                   const SizedBox(width: 12),
-                  const Icon(Icons.play_circle_outline, color: Colors.white70, size: 20),
+                  const Icon(
+                    Icons.play_circle_outline,
+                    color: Colors.white70,
+                    size: 20,
+                  ),
                   const SizedBox(width: 4),
-                  Text(AppTexts.get('adWatchOnce'), style: TextStyle(color: Colors.white70)),
+                  Text(
+                    AppTexts.get('adWatchOnce'),
+                    style: TextStyle(color: Colors.white70),
+                  ),
                 ],
               ],
             ),
@@ -78,14 +111,17 @@ class _ShopViewState extends State<ShopView> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(AppTexts.get('no'), style: const TextStyle(color: Colors.white70)),
+            child: Text(
+              AppTexts.get('no'),
+              style: const TextStyle(color: Colors.white70),
+            ),
           ),
           ElevatedButton(
             onPressed: canAfford
                 ? () {
-              Navigator.pop(ctx);
-              _purchaseItem(itemId, coinCost, requireAd);
-            }
+                    Navigator.pop(ctx);
+                    _purchaseItem(itemId, coinCost, requireAd);
+                  }
                 : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFFD166),
@@ -98,7 +134,11 @@ class _ShopViewState extends State<ShopView> {
     );
   }
 
-  Future<void> _purchaseItem(String itemId, int coinCost, bool requireAd) async {
+  Future<void> _purchaseItem(
+    String itemId,
+    int coinCost,
+    bool requireAd,
+  ) async {
     final userProvider = context.read<UserProvider>();
     final isEffect = itemId.startsWith('effect_') || itemId.startsWith('skin_');
 
@@ -106,9 +146,9 @@ class _ShopViewState extends State<ShopView> {
       final rewardEarned = await AdRewardHelper.instance.showAdAndGetReward();
       if (!rewardEarned) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppTexts.get('adFailed'))),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(AppTexts.get('adFailed'))));
         }
         return;
       }
@@ -129,9 +169,9 @@ class _ShopViewState extends State<ShopView> {
     if (success && mounted) {
       _showCenterToast(AppTexts.get('purchaseSuccess'));
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppTexts.get('coinNotEnough'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(AppTexts.get('coinNotEnough'))));
     }
   }
 
@@ -147,13 +187,21 @@ class _ShopViewState extends State<ShopView> {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: const Color(0xFFFFD166), width: 1.5),
             boxShadow: const [
-              BoxShadow(color: Colors.black54, blurRadius: 20, offset: Offset(0, 6)),
+              BoxShadow(
+                color: Colors.black54,
+                blurRadius: 20,
+                offset: Offset(0, 6),
+              ),
             ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.check_circle, color: Color(0xFF2ED573), size: 28),
+              const Icon(
+                Icons.check_circle,
+                color: Color(0xFF2ED573),
+                size: 28,
+              ),
               const SizedBox(width: 10),
               Text(
                 message,
@@ -190,7 +238,11 @@ class _ShopViewState extends State<ShopView> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.monetization_on_rounded, color: Color(0xFFFFD166), size: 20),
+                    const Icon(
+                      Icons.monetization_on_rounded,
+                      color: Color(0xFFFFD166),
+                      size: 20,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       '${userProvider.coins}',
@@ -216,6 +268,7 @@ class _ShopViewState extends State<ShopView> {
               ],
               selected: {_selectedTab},
               onSelectionChanged: (v) => setState(() => _selectedTab = v.first),
+              style: _segmentedStyle,
             ),
           ),
 
@@ -234,10 +287,10 @@ class _ShopViewState extends State<ShopView> {
     return widget.embedded
         ? content
         : Scaffold(
-      appBar: const GameHeader(titleKey: ''),
-      body: content,
-      bottomNavigationBar: const GameBottomNavigation(currentIndex: 2),
-    );
+            appBar: const GameHeader(titleKey: ''),
+            body: content,
+            bottomNavigationBar: const GameBottomNavigation(currentIndex: 2),
+          );
   }
 
   Widget _buildEffectList(UserProvider userProvider) {
@@ -261,7 +314,12 @@ class _ShopViewState extends State<ShopView> {
           isBasic: false,
           onTap: isOwned
               ? null
-              : () => _showPurchaseDialog(item.id, item.name, item.coinPrice, false),
+              : () => _showPurchaseDialog(
+                  item.id,
+                  item.name,
+                  item.coinPrice,
+                  false,
+                ),
         );
       },
     );
@@ -298,7 +356,12 @@ class _ShopViewState extends State<ShopView> {
           requireAd: item.requireAd,
           isOwned: isOwned,
           isBasic: item.isBasic,
-          onTap: () => _showPurchaseDialog(item.id, item.name, item.coinPrice, item.requireAd),
+          onTap: () => _showPurchaseDialog(
+            item.id,
+            item.name,
+            item.coinPrice,
+            item.requireAd,
+          ),
         );
       },
     );
@@ -334,48 +397,65 @@ class _ShopViewState extends State<ShopView> {
           ),
           child: Icon(icon, color: color),
         ),
-        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-        subtitle: Text(desc, style: const TextStyle(fontSize: 12, color: Colors.white60)),
+        title: Text(
+          name,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+        ),
+        subtitle: Text(
+          desc,
+          style: const TextStyle(fontSize: 12, color: Colors.white60),
+        ),
         trailing: isOwned
             ? Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: isBasic
-                ? const Color(0xFF2ED573).withValues(alpha: 0.2)
-                : const Color(0xFF2ED573).withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            isBasic ? AppTexts.get('basicMusic') : AppTexts.get('owned'),
-            style: const TextStyle(
-              color: Color(0xFF2ED573),
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
-          ),
-        )
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: isBasic
+                      ? const Color(0xFF2ED573).withValues(alpha: 0.2)
+                      : const Color(0xFF2ED573).withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  isBasic ? AppTexts.get('basicMusic') : AppTexts.get('owned'),
+                  style: const TextStyle(
+                    color: Color(0xFF2ED573),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              )
             : ElevatedButton(
-          onPressed: onTap,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFFFD166),
-            foregroundColor: Colors.black,
-            minimumSize: const Size(70, 36),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.monetization_on, size: 14),
-              const SizedBox(width: 4),
-              Text('$coinPrice', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
-              if (requireAd) ...[
-                const SizedBox(width: 4),
-                const Icon(Icons.play_circle_outline, size: 14),
-              ],
-            ],
-          ),
-        ),
+                onPressed: onTap,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFD166),
+                  foregroundColor: Colors.black,
+                  minimumSize: const Size(70, 36),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.monetization_on, size: 14),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$coinPrice',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 12,
+                      ),
+                    ),
+                    if (requireAd) ...[
+                      const SizedBox(width: 4),
+                      const Icon(Icons.play_circle_outline, size: 14),
+                    ],
+                  ],
+                ),
+              ),
       ),
     );
   }

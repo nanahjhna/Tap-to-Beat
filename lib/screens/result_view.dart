@@ -11,7 +11,8 @@ class ResultView extends StatefulWidget {
   State<ResultView> createState() => _ResultViewState();
 }
 
-class _ResultViewState extends State<ResultView> with SingleTickerProviderStateMixin {
+class _ResultViewState extends State<ResultView>
+    with SingleTickerProviderStateMixin {
   bool _rewardGiven = false;
   late final AnimationController _rankAnimController;
   late final Animation<double> _rankScaleAnim;
@@ -28,7 +29,10 @@ class _ResultViewState extends State<ResultView> with SingleTickerProviderStateM
       CurvedAnimation(parent: _rankAnimController, curve: Curves.elasticOut),
     );
     _rankFadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _rankAnimController, curve: const Interval(0.0, 0.4, curve: Curves.easeIn)),
+      CurvedAnimation(
+        parent: _rankAnimController,
+        curve: const Interval(0.0, 0.4, curve: Curves.easeIn),
+      ),
     );
     _rankAnimController.forward();
   }
@@ -66,31 +70,35 @@ class _ResultViewState extends State<ResultView> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    final data = ModalRoute.of(context)?.settings.arguments as Map? ?? {
-      'victory': false,
-      'stage': 1,
-      'score': 0,
-      'maxCombo': 0,
-      'perfect': 0,
-      'good': 0,
-      'bad': 0,
-      'miss': 0,
-      'totalNotes': 80,
-      'songTitle': 'Mikoshi Mayhem',
-      'songArtist': 'Matsuri Beats',
-    };
+    final data =
+        ModalRoute.of(context)?.settings.arguments as Map? ??
+        {
+          'victory': false,
+          'stage': 1,
+          'score': 0,
+          'maxCombo': 0,
+          'perfect': 0,
+          'good': 0,
+          'bad': 0,
+          'miss': 0,
+          'totalNotes': 80,
+          'songTitle': 'Mikoshi Mayhem',
+          'songArtist': 'Matsuri Beats',
+        };
 
     final won = data['victory'] == true;
     final stage = data['stage'] as int? ?? 1;
-    final difficulty =
-        StageGenerator.normalizeDifficulty(data['difficulty'] as String?);
+    final difficulty = StageGenerator.normalizeDifficulty(
+      data['difficulty'] as String?,
+    );
     final score = data['score'] as int? ?? 0;
     final maxCombo = data['maxCombo'] as int? ?? 0;
     final perfect = data['perfect'] as int? ?? 0;
     final good = data['good'] as int? ?? 0;
     final bad = data['bad'] as int? ?? 0;
     final miss = data['miss'] as int? ?? 0;
-    final totalNotes = data['totalNotes'] as int? ?? (perfect + good + bad + miss);
+    final totalNotes =
+        data['totalNotes'] as int? ?? (perfect + good + bad + miss);
     final songTitle = data['songTitle'] as String? ?? 'Mikoshi Mayhem';
     final songArtist = data['songArtist'] as String? ?? 'Matsuri Beats';
 
@@ -98,7 +106,9 @@ class _ResultViewState extends State<ResultView> with SingleTickerProviderStateM
     final rankColor = _getRankColor(rank);
 
     final hitNotes = perfect + good;
-    final accuracy = totalNotes > 0 ? ((hitNotes / totalNotes) * 100).toStringAsFixed(1) : '0.0';
+    final accuracy = totalNotes > 0
+        ? ((hitNotes / totalNotes) * 100).toStringAsFixed(1)
+        : '0.0';
 
     // 코인 보상 처리 (한 번만)
     if (!_rewardGiven && mounted) {
@@ -106,11 +116,23 @@ class _ResultViewState extends State<ResultView> with SingleTickerProviderStateM
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final userProvider = context.read<UserProvider>();
         // 클리어 기록 저장
-        userProvider.saveStageResult(stage, score, maxCombo, perfect, good, bad, miss, rank, won);
+        userProvider.saveStageResult(
+          stage,
+          score,
+          maxCombo,
+          perfect,
+          good,
+          bad,
+          miss,
+          rank,
+          won,
+        );
         // 클리어 시 코인 지급
         if (won) {
-          final stageData =
-              StageGenerator.getStage(stage, difficulty: difficulty);
+          final stageData = StageGenerator.getStage(
+            stage,
+            difficulty: difficulty,
+          );
           userProvider.addCoins(stageData.rewardCoins);
         }
       });
@@ -132,7 +154,9 @@ class _ResultViewState extends State<ResultView> with SingleTickerProviderStateM
                   fontSize: 28,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 2,
-                  color: won ? const Color(0xFFFFD166) : const Color(0xFFFF4757),
+                  color: won
+                      ? const Color(0xFFFFD166)
+                      : const Color(0xFFFF4757),
                 ),
               ),
               const SizedBox(height: 6),
@@ -149,7 +173,8 @@ class _ResultViewState extends State<ResultView> with SingleTickerProviderStateM
               // 랭크 배지 & 스코어 (가로 배치)
               // 랭크 배지 & 스코어 (간격 및 정렬 조정)
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween, // 양 끝으로 배치하여 여백 확보
+                mainAxisAlignment:
+                    MainAxisAlignment.spaceBetween, // 양 끝으로 배치하여 여백 확보
                 children: [
                   // 📌 랭크 배지 (왼쪽에 여백을 주기 위해 Padding 추가)
                   Padding(
@@ -197,19 +222,27 @@ class _ResultViewState extends State<ResultView> with SingleTickerProviderStateM
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end, // 오른쪽 정렬
                       children: [
-                        Text(
-                          '$score',
-                          style: const TextStyle(
-                            fontSize: 38,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 2,
-                            color: Colors.white,
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            '$score',
+                            style: const TextStyle(
+                              fontSize: 38,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 2,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           AppTexts.get('score'),
-                          style: const TextStyle(fontSize: 13, color: Colors.white54, letterSpacing: 1),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.white54,
+                            letterSpacing: 1,
+                          ),
                         ),
                       ],
                     ),
@@ -263,19 +296,34 @@ class _ResultViewState extends State<ResultView> with SingleTickerProviderStateM
                   padding: const EdgeInsets.only(top: 16),
                   child: Builder(
                     builder: (context) {
-                      final stageData = StageGenerator.getStage(stage,
-                          difficulty: difficulty);
+                      final stageData = StageGenerator.getStage(
+                        stage,
+                        difficulty: difficulty,
+                      );
                       return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFD166).withValues(alpha: 0.15),
+                          color: const Color(
+                            0xFFFFD166,
+                          ).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFFFD166).withValues(alpha: 0.4)),
+                          border: Border.all(
+                            color: const Color(
+                              0xFFFFD166,
+                            ).withValues(alpha: 0.4),
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.monetization_on, color: Color(0xFFFFD166), size: 20),
+                            const Icon(
+                              Icons.monetization_on,
+                              color: Color(0xFFFFD166),
+                              size: 20,
+                            ),
                             const SizedBox(width: 8),
                             Text(
                               '+${stageData.rewardCoins} ${AppTexts.get('coins')}',
@@ -299,8 +347,10 @@ class _ResultViewState extends State<ResultView> with SingleTickerProviderStateM
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () => Navigator.pushReplacementNamed(
-                      context, '/gamePlay',
-                      arguments: {'stage': stage, 'difficulty': difficulty}),
+                    context,
+                    '/gamePlay',
+                    arguments: {'stage': stage, 'difficulty': difficulty},
+                  ),
                   icon: const Icon(Icons.replay_rounded),
                   label: Text(AppTexts.get('retry')),
                   style: ElevatedButton.styleFrom(
@@ -314,12 +364,17 @@ class _ResultViewState extends State<ResultView> with SingleTickerProviderStateM
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => Navigator.pushReplacementNamed(context, '/stageSelect'),
+                      onPressed: () => Navigator.pushReplacementNamed(
+                        context,
+                        '/stageSelect',
+                      ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white,
                         side: const BorderSide(color: Colors.white24),
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                       child: Text(AppTexts.get('selectStage')),
                     ),
@@ -327,13 +382,18 @@ class _ResultViewState extends State<ResultView> with SingleTickerProviderStateM
                   const SizedBox(width: 10),
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () =>
-                          Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false),
+                      onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/main',
+                        (route) => false,
+                      ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white,
                         side: const BorderSide(color: Colors.white24),
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                       child: Text(AppTexts.get('lobby')),
                     ),
@@ -351,9 +411,19 @@ class _ResultViewState extends State<ResultView> with SingleTickerProviderStateM
   Widget _statItem(String label, String value) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white)),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+            color: Colors.white,
+          ),
+        ),
         const SizedBox(height: 2),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.white60)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: Colors.white60),
+        ),
       ],
     );
   }

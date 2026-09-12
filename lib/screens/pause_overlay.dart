@@ -29,12 +29,17 @@ class PauseOverlay extends StatelessWidget {
       backgroundColor: Colors.transparent,
       child: Container(
         padding: const EdgeInsets.all(20),
-        width: 300,
-        height: 410,
+        constraints: BoxConstraints(
+          maxWidth: 300,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.75,
+        ),
         decoration: BoxDecoration(
-          color: const Color(0xFF1F1B40),
+          color: const Color(0xFF201D3D),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFFFD166).withValues(alpha: 0.3), width: 1.5),
+          border: Border.all(
+            color: const Color(0xFFFFD166).withValues(alpha: 0.3),
+            width: 1.5,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.5),
@@ -43,96 +48,119 @@ class PauseOverlay extends StatelessWidget {
             ),
           ],
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.pause_circle_outline, color: Color(0xFFFFD166), size: 48),
-            const SizedBox(height: 10),
-            Text(
-              AppTexts.get('pause'),
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.pause_circle_outline,
                 color: Color(0xFFFFD166),
-                letterSpacing: 2,
+                size: 48,
               ),
-            ),
-            const SizedBox(height: 20),
-            // 계속하기
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFD166),
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                onPressed: () => _handleResume(context),
-                child: Text(AppTexts.get('resume'), style: const TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ),
-            const SizedBox(height: 8),
-            // 다시하기 버튼
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(color: Colors.white24),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                  onRetry?.call();
-                },
-                child: Text(AppTexts.get('retry')),
-              ),
-            ),
-            const SizedBox(height: 8),
-            // 설정
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(color: Colors.white24),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, '/settings');
-                },
-                child: Text(AppTexts.get('settings')),
-              ),
-            ),
-            const SizedBox(height: 8),
-            // 로비로 나가기
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF4757).withValues(alpha: 0.85),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                onPressed: () {
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/main',
-                        (route) => false,
-                  );
-                },
-                child: Text(
-                  AppTexts.get('quitToLobby'),
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              const SizedBox(height: 10),
+              Text(
+                AppTexts.get('pause'),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFFFFD166),
+                  letterSpacing: 2,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              // 계속하기
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFD166),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: () => _handleResume(context),
+                  child: Text(
+                    AppTexts.get('resume'),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // 다시하기 버튼
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white24),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    onRetry?.call();
+                  },
+                  child: Text(AppTexts.get('retry')),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // 설정
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white24),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/settings');
+                  },
+                  child: Text(AppTexts.get('settings')),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // 로비로 나가기
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(
+                      0xFFFF4757,
+                    ).withValues(alpha: 0.85),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      '/main',
+                      (route) => false,
+                    );
+                  },
+                  child: Text(
+                    AppTexts.get('quitToLobby'),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -146,7 +174,8 @@ class _CountdownDialog extends StatefulWidget {
   State<_CountdownDialog> createState() => _CountdownDialogState();
 }
 
-class _CountdownDialogState extends State<_CountdownDialog> with SingleTickerProviderStateMixin {
+class _CountdownDialogState extends State<_CountdownDialog>
+    with SingleTickerProviderStateMixin {
   int _count = 3;
   late final Timer _timer;
   late final AnimationController _animController;
@@ -160,11 +189,15 @@ class _CountdownDialogState extends State<_CountdownDialog> with SingleTickerPro
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
-    _scaleAnim = Tween<double>(begin: 1.8, end: 1.0).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
-    );
+    _scaleAnim = Tween<double>(
+      begin: 1.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
     _fadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animController, curve: const Interval(0.0, 0.5, curve: Curves.easeIn)),
+      CurvedAnimation(
+        parent: _animController,
+        curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
+      ),
     );
     _animController.forward();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -200,10 +233,7 @@ class _CountdownDialogState extends State<_CountdownDialog> with SingleTickerPro
           animation: _animController,
           builder: (context, child) => FadeTransition(
             opacity: _fadeAnim,
-            child: Transform.scale(
-              scale: _scaleAnim.value,
-              child: child,
-            ),
+            child: Transform.scale(scale: _scaleAnim.value, child: child),
           ),
           child: Text(
             '$_count',
@@ -211,12 +241,7 @@ class _CountdownDialogState extends State<_CountdownDialog> with SingleTickerPro
               fontSize: 80,
               fontWeight: FontWeight.w900,
               color: Color(0xFFFFD166),
-              shadows: [
-                Shadow(
-                  color: Colors.black,
-                  blurRadius: 20,
-                ),
-              ],
+              shadows: [Shadow(color: Colors.black, blurRadius: 20)],
             ),
           ),
         ),

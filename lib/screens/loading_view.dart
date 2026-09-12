@@ -22,7 +22,8 @@ class _LoadingViewState extends State<LoadingView> {
     // 1. 앱 기동 시 pubspec.yaml의 버전 및 빌드 번호 가져오기
     final packageInfo = await PackageInfo.fromPlatform();
     final String version = packageInfo.version; // 예: "1.0.0"
-    final String buildNumber = packageInfo.buildNumber; // 예: "8" (9로 올리면 스토어와 비교)
+    final String buildNumber =
+        packageInfo.buildNumber; // 예: "8" (9로 올리면 스토어와 비교)
 
     debugPrint('App Version: $version+$buildNumber');
 
@@ -96,7 +97,7 @@ class _LoadingViewState extends State<LoadingView> {
               ),
             ),
             content: Text(
-              '${AppTexts.get('updateNeeded')}\n(A new version is available.)',
+              AppTexts.get('updateNeeded'),
               style: const TextStyle(color: Colors.white70, fontSize: 14),
             ),
             actions: [
@@ -116,7 +117,9 @@ class _LoadingViewState extends State<LoadingView> {
                   backgroundColor: const Color(0xFFFFD166),
                   foregroundColor: Colors.black,
                 ),
-                child: Text(retrying ? AppTexts.get('checking') : AppTexts.get('update')),
+                child: Text(
+                  retrying ? AppTexts.get('checking') : AppTexts.get('update'),
+                ),
               ),
             ],
           ),
@@ -127,15 +130,15 @@ class _LoadingViewState extends State<LoadingView> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 18),
-              Text(AppTexts.get('loading')),
-            ],
-          ),
-        ),
-      );
+    body: Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const CircularProgressIndicator(),
+          const SizedBox(height: 18),
+          Text(AppTexts.get('loading')),
+        ],
+      ),
+    ),
+  );
 }

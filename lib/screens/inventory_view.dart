@@ -7,6 +7,16 @@ import '../widgets/game_bottom_navigation.dart';
 import '../widgets/game_header.dart';
 import '../utils/app_texts.dart';
 
+ButtonStyle get _segmentedStyle => SegmentedButton.styleFrom(
+  backgroundColor: const Color(0xFF1B183B),
+  selectedBackgroundColor: const Color(0xFFFFD166),
+  selectedForegroundColor: Colors.black,
+  foregroundColor: Colors.white70,
+  side: const BorderSide(color: Colors.white12),
+  textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+  visualDensity: VisualDensity.compact,
+);
+
 class InventoryView extends StatefulWidget {
   const InventoryView({super.key, this.embedded = false});
   final bool embedded;
@@ -36,11 +46,10 @@ class _InventoryViewState extends State<InventoryView> {
               ],
               selected: {_category},
               onSelectionChanged: (v) => setState(() => _category = v.first),
+              style: _segmentedStyle,
             ),
           ),
-          Expanded(
-            child: _buildItemList(userProvider),
-          ),
+          Expanded(child: _buildItemList(userProvider)),
         ],
       ),
     );
@@ -63,32 +72,36 @@ class _InventoryViewState extends State<InventoryView> {
       for (final stage in StageGenerator.allStages) {
         final itemId = 'stage_${stage.stageNumber}';
         if (userProvider.ownsSong(itemId)) {
-          items.add(_InventoryItemData(
-            id: itemId,
-            name: stage.title,
-            desc: '${stage.artist} • BPM ${stage.bpm} • ${stage.difficulty}',
-            type: 'song',
-            color: const Color(0xFF1E90FF),
-            icon: Icons.music_note_rounded,
-            isEquipped: userProvider.isSongEquipped(itemId),
-          ));
+          items.add(
+            _InventoryItemData(
+              id: itemId,
+              name: stage.title,
+              desc: '${stage.artist} • BPM ${stage.bpm} • ${stage.difficulty}',
+              type: 'song',
+              color: const Color(0xFF1E90FF),
+              icon: Icons.music_note_rounded,
+              isEquipped: userProvider.isSongEquipped(itemId),
+            ),
+          );
         }
       }
-      
+
       // 2) Shop에서 구매한 음악 + 기본곡
       for (final item in ShopData.shopMusic) {
         if (item.stageNumber != 0) continue;
         if (userProvider.ownsSong(item.id)) {
-          items.add(_InventoryItemData(
-            id: item.id,
-            name: item.name,
-            desc: item.desc,
-            type: 'song',
-            color: item.color,
-            icon: item.icon,
-            isEquipped: false,
-            isBasic: item.isBasic,
-          ));
+          items.add(
+            _InventoryItemData(
+              id: item.id,
+              name: item.name,
+              desc: item.desc,
+              type: 'song',
+              color: item.color,
+              icon: item.icon,
+              isEquipped: false,
+              isBasic: item.isBasic,
+            ),
+          );
         }
       }
     }
@@ -97,28 +110,32 @@ class _InventoryViewState extends State<InventoryView> {
     if (_category == 0 || _category == 2) {
       for (final effect in ShopData.effects) {
         if (userProvider.ownsEffect(effect.id)) {
-          items.add(_InventoryItemData(
-            id: effect.id,
-            name: effect.name,
-            desc: effect.desc,
-            type: 'effect',
-            color: effect.color,
-            icon: effect.icon,
-            isEquipped: userProvider.isEffectEquipped(effect.id),
-          ));
+          items.add(
+            _InventoryItemData(
+              id: effect.id,
+              name: effect.name,
+              desc: effect.desc,
+              type: 'effect',
+              color: effect.color,
+              icon: effect.icon,
+              isEquipped: userProvider.isEffectEquipped(effect.id),
+            ),
+          );
         }
       }
       for (final skin in ShopData.noteSkins) {
         if (userProvider.ownsEffect(skin.id)) {
-          items.add(_InventoryItemData(
-            id: skin.id,
-            name: skin.name,
-            desc: skin.desc,
-            type: 'effect',
-            color: skin.color,
-            icon: skin.icon,
-            isEquipped: userProvider.isEffectEquipped(skin.id),
-          ));
+          items.add(
+            _InventoryItemData(
+              id: skin.id,
+              name: skin.name,
+              desc: skin.desc,
+              type: 'effect',
+              color: skin.color,
+              icon: skin.icon,
+              isEquipped: userProvider.isEffectEquipped(skin.id),
+            ),
+          );
         }
       }
     }
@@ -159,9 +176,7 @@ class _InventoryViewState extends State<InventoryView> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
         side: BorderSide(
-          color: highlight
-              ? item.color.withValues(alpha: 0.8)
-              : Colors.white12,
+          color: highlight ? item.color.withValues(alpha: 0.8) : Colors.white12,
           width: highlight ? 1.5 : 1.0,
         ),
       ),
@@ -182,9 +197,7 @@ class _InventoryViewState extends State<InventoryView> {
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
         ),
         subtitle: Text(
-          highlight
-              ? '${AppTexts.get('equipped')} • ${item.desc}'
-              : item.desc,
+          highlight ? '${AppTexts.get('equipped')} • ${item.desc}' : item.desc,
           style: TextStyle(
             fontSize: 12,
             color: highlight ? const Color(0xFFFFD166) : Colors.white60,
@@ -192,8 +205,10 @@ class _InventoryViewState extends State<InventoryView> {
         ),
         trailing: isSong
             ? Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: item.isBasic
                       ? const Color(0xFF2ED573).withValues(alpha: 0.2)
@@ -201,7 +216,9 @@ class _InventoryViewState extends State<InventoryView> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  item.isBasic ? AppTexts.get('basicMusic') : AppTexts.get('owned'),
+                  item.isBasic
+                      ? AppTexts.get('basicMusic')
+                      : AppTexts.get('owned'),
                   style: TextStyle(
                     color: item.isBasic ? Color(0xFF2ED573) : Colors.white70,
                     fontWeight: FontWeight.bold,
@@ -215,8 +232,9 @@ class _InventoryViewState extends State<InventoryView> {
                   userProvider.toggleEquipEffect(item.id);
                 },
                 activeThumbColor: const Color(0xFFFFD166),
-                activeTrackColor:
-                    const Color(0xFFFFD166).withValues(alpha: 0.3),
+                activeTrackColor: const Color(
+                  0xFFFFD166,
+                ).withValues(alpha: 0.3),
                 inactiveThumbColor: Colors.white54,
                 inactiveTrackColor: Colors.white12,
               ),
