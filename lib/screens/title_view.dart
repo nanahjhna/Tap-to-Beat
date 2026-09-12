@@ -11,13 +11,30 @@ class TitleView extends StatefulWidget {
   State<TitleView> createState() => _TitleViewState();
 }
 
-class _TitleViewState extends State<TitleView> {
+class _TitleViewState extends State<TitleView> with TickerProviderStateMixin {
   String _versionString = 'v1.0.0';
+  late final AnimationController _pulseController;
+  late final AnimationController _shimmerController;
 
   @override
   void initState() {
     super.initState();
     _loadVersion();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    _shimmerController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadVersion() async {
@@ -103,40 +120,72 @@ class _TitleViewState extends State<TitleView> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: const Color(0xFFFFD166).withValues(alpha: 0.12),
-                    border: Border.all(color: const Color(0xFFFFD166).withValues(alpha: 0.5), width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFFFD166).withValues(alpha: 0.3),
-                        blurRadius: 30,
-                        spreadRadius: 4,
+                AnimatedBuilder(
+                  animation: _pulseController,
+                  builder: (context, child) {
+                    final scale = 1.0 + _pulseController.value * 0.08;
+                    final blurRadius = 30.0 + _pulseController.value * 15.0;
+                    final spreadRadius = 4.0 + _pulseController.value * 3.0;
+                    return Transform.scale(
+                      scale: scale,
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xFFFFD166).withValues(alpha: 0.12),
+                          border: Border.all(color: const Color(0xFFFFD166).withValues(alpha: 0.5), width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFFFD166).withValues(alpha: 0.3),
+                              blurRadius: blurRadius,
+                              spreadRadius: spreadRadius,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.headphones_rounded,
+                          size: 64,
+                          color: Color(0xFFFFD166),
+                        ),
                       ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.headphones_rounded,
-                    size: 64,
-                    color: Color(0xFFFFD166),
-                  ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 24),
-                const Text(
-                  'TAP TO BEAT',
-                  style: TextStyle(
-                    letterSpacing: 4,
-                    fontSize: 32,
-                    color: Color(0xFFFFD166),
-                    fontWeight: FontWeight.w900,
-                    shadows: [
-                      Shadow(
-                        color: Color(0xFFFF8B00),
-                        blurRadius: 16,
-                      ),
-                    ],
+                AnimatedBuilder(
+                  animation: _shimmerController,
+                  builder: (context, child) {
+                    return ShaderMask(
+                      blendMode: BlendMode.srcIn,
+                      shaderCallback: (bounds) {
+                        return LinearGradient(
+                          begin: Alignment(-1.0 + 2.0 * _shimmerController.value, 0),
+                          end: Alignment(-0.5 + 2.0 * _shimmerController.value, 0),
+                          colors: const [
+                            Color(0xFFFFD166),
+                            Color(0xFFFFFFCC),
+                            Color(0xFFFFD166),
+                          ],
+                          stops: const [0.0, 0.5, 1.0],
+                        ).createShader(bounds);
+                      },
+                      child: child,
+                    );
+                  },
+                  child: const Text(
+                    'TAP TO BEAT',
+                    style: TextStyle(
+                      letterSpacing: 4,
+                      fontSize: 32,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      shadows: [
+                        Shadow(
+                          color: Color(0xFFFF8B00),
+                          blurRadius: 16,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 48),

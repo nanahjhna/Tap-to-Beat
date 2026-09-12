@@ -69,7 +69,7 @@ class _StageSelectViewState extends State<StageSelectView> {
 
   void _onStageTap(BuildContext context, StageModel stage, bool isOwned) {
     if (isOwned) {
-      _showDifficultyPopup(context, stage);
+      _showDifficultyPopup(context, stage); // 난이도 선택 팝업 호출
     } else {
       _showLockPopup(context, stage);
     }

@@ -61,7 +61,7 @@ class _ShopViewState extends State<ShopView> {
                   const SizedBox(width: 12),
                   const Icon(Icons.play_circle_outline, color: Colors.white70, size: 20),
                   const SizedBox(width: 4),
-                  const Text('+ 광고 1회', style: TextStyle(color: Colors.white70)),
+                  Text(AppTexts.get('adWatchOnce'), style: TextStyle(color: Colors.white70)),
                 ],
               ],
             ),
@@ -274,10 +274,10 @@ class _ShopViewState extends State<ShopView> {
     }).toList();
 
     if (allItems.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          '모든 음악을 보유하고 있습니다!',
-          style: TextStyle(color: Colors.white60, fontSize: 14),
+          AppTexts.get('allMusicOwned'),
+          style: const TextStyle(color: Colors.white60, fontSize: 14),
         ),
       );
     }
@@ -346,7 +346,7 @@ class _ShopViewState extends State<ShopView> {
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
-            isBasic ? '기본음악' : AppTexts.get('owned'),
+            isBasic ? AppTexts.get('basicMusic') : AppTexts.get('owned'),
             style: const TextStyle(
               color: Color(0xFF2ED573),
               fontWeight: FontWeight.bold,

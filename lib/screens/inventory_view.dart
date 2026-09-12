@@ -201,7 +201,7 @@ class _InventoryViewState extends State<InventoryView> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  item.isBasic ? '기본음악' : AppTexts.get('owned'),
+                  item.isBasic ? AppTexts.get('basicMusic') : AppTexts.get('owned'),
                   style: TextStyle(
                     color: item.isBasic ? Color(0xFF2ED573) : Colors.white70,
                     fontWeight: FontWeight.bold,

@@ -165,14 +165,14 @@ class _SettingsViewState extends State<SettingsView> {
                           ],
                        ),
                         Text(
-                          '+${AppTexts.get('coins')} 보너스',
+                           '+${AppTexts.get('coins')} ${AppTexts.get('bonus')}',
                           style: const TextStyle(color: Color(0xFFFFD166), fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      '게임 진행 상황과 데이터를 Google 계정에 연동할 수 있습니다.',
+                      Text(
+                      AppTexts.get('googleSyncDesc'),
                       style: const TextStyle(fontSize: 11, color: Colors.white60),
                     ),
                     const SizedBox(height: 8),

@@ -20,32 +20,32 @@ class _QuestViewState extends State<QuestView> {
   static const List<Map<String, dynamic>> _achievements = [
     {
       'id': 'first_clear',
-      'title': '첫 곡 클리어',
-      'desc': '아무 곡이나 1회 클리어하세요.',
+      'titleKey': 'questFirstClear',
+      'descKey': 'questFirstClearDesc',
       'target': 1,
       'reward': 100,
       'type': 'clear',
     },
     {
       'id': 'clear_5',
-      'title': '곡 5개 클리어',
-      'desc': '누적 5곡을 클리어하세요.',
+      'titleKey': 'questClear5',
+      'descKey': 'questClear5Desc',
       'target': 5,
       'reward': 250,
       'type': 'clear',
     },
     {
       'id': 'clear_10',
-      'title': '곡 10개 클리어',
-      'desc': '누적 10곡을 클리어하세요.',
+      'titleKey': 'questClear10',
+      'descKey': 'questClear10Desc',
       'target': 10,
       'reward': 500,
       'type': 'clear',
     },
     {
       'id': 'rank_s',
-      'title': 'S랭크 달성',
-      'desc': '한 곡에서 S랭크를 달성하세요.',
+      'titleKey': 'questRankS',
+      'descKey': 'questRankSDesc',
       'target': 1,
       'reward': 300,
       'type': 'rank',
@@ -93,7 +93,7 @@ class _QuestViewState extends State<QuestView> {
     if (!mounted) return;
     setState(() => _claimed.add(questId));
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('+$reward ${AppTexts.get('coins')} 획득!')),
+      SnackBar(content: Text('+$reward ${AppTexts.get('coins')} ${AppTexts.get('coinsEarned')}')),
     );
   }
 
@@ -131,7 +131,7 @@ class _QuestViewState extends State<QuestView> {
                   children: [
                     Expanded(
                       child: Text(
-                        item['title'] as String,
+                        AppTexts.get(item['titleKey'] as String),
                         style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
@@ -156,7 +156,7 @@ class _QuestViewState extends State<QuestView> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  item['desc'] as String,
+                  AppTexts.get(item['descKey'] as String),
                   style: const TextStyle(color: Colors.white60, fontSize: 12),
                 ),
                 const SizedBox(height: 10),

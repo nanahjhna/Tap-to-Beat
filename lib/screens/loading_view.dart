@@ -88,16 +88,16 @@ class _LoadingViewState extends State<LoadingView> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
-            title: const Text(
-              '업데이트 필요',
-              style: TextStyle(
+            title: Text(
+              AppTexts.get('updateRequired'),
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
               ),
             ),
-            content: const Text(
-              '새 버전이 있습니다. 업데이트 후 이용해 주세요.\n(A new version is available.)',
-              style: TextStyle(color: Colors.white70, fontSize: 14),
+            content: Text(
+              '${AppTexts.get('updateNeeded')}\n(A new version is available.)',
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
             ),
             actions: [
               ElevatedButton(
@@ -116,7 +116,7 @@ class _LoadingViewState extends State<LoadingView> {
                   backgroundColor: const Color(0xFFFFD166),
                   foregroundColor: Colors.black,
                 ),
-                child: Text(retrying ? '확인 중...' : '업데이트'),
+                child: Text(retrying ? AppTexts.get('checking') : AppTexts.get('update')),
               ),
             ],
           ),

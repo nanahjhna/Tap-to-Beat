@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flame/game.dart';
@@ -20,11 +21,17 @@ class GamePlayView extends StatefulWidget {
   State<GamePlayView> createState() => _GamePlayViewState();
 }
 
-class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver {
+class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver, TickerProviderStateMixin {
   late final AudioPlayer _audioPlayer;
   late final Stopwatch _stopwatch;
+  late final AnimationController _judgeAnimController;
+  late final Animation<double> _judgeScaleAnim;
+  late final Animation<double> _judgeFadeAnim;
+  late final AnimationController _laneFlashController;
+  late final AnimationController _bgPulseController;
 
   final List<bool> _keyActive = [false, false, false, false];
+  int _laneFlashIndex = -1;
 
   int _score = 0;
   int _combo = 0;
@@ -64,6 +71,24 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
     WidgetsBinding.instance.addObserver(this);
     _audioPlayer = AudioPlayer();
     _stopwatch = Stopwatch();
+    _judgeAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _judgeScaleAnim = Tween<double>(begin: 1.5, end: 1.0).animate(
+      CurvedAnimation(parent: _judgeAnimController, curve: Curves.easeOutBack),
+    );
+    _judgeFadeAnim = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(parent: _judgeAnimController, curve: const Interval(0.3, 1.0, curve: Curves.easeOut)),
+    );
+    _laneFlashController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+    _bgPulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
 
     // 📌 게임 도중 설정(볼륨 등) 변경 시 실시간 반영을 위한 리스너 등록
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -250,9 +275,13 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
 
     if (targetNote != null && minDiff <= badMs) {
       targetNote.isHit = true;
+      _gameWorld!.spawnHitParticles(targetNote.position);
+      setState(() => _laneFlashIndex = trackIdx);
+      _laneFlashController.forward(from: 0);
 
       if (minDiff <= perfectMs) {
         _showJudgment('PERFECT', const Color(0xFF2ED573));
+        _bgPulseController.forward(from: 0);
         _score += 300;
         _life = (_life + healPerfect).clamp(0.0, 100.0);
         _countPerfect++;
@@ -297,6 +326,9 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
     _currentJudge = text;
     _judgeColor = color;
     _judgeClearTimer?.cancel();
+    _judgeAnimController
+      ..reset()
+      ..forward();
     _judgeClearTimer = Timer(const Duration(milliseconds: 350), () {
       if (mounted && _currentJudge == text) {
         setState(() => _currentJudge = '');
@@ -368,6 +400,9 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
 
     _judgeClearTimer?.cancel();
     _stopwatch.stop();
+    _judgeAnimController.dispose();
+    _laneFlashController.dispose();
+    _bgPulseController.dispose();
     _audioPlayer.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -414,35 +449,89 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
                                 onTapDown: (_) => _handleKeyPress(index),
                                 onTapUp: (_) => _handleKeyRelease(index),
                                 onTapCancel: () => _handleKeyRelease(index),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    gradient: _keyActive[index] && _gameWorld != null
-                                        ? LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        _gameWorld!.noteColor.withValues(alpha: 0.5),
-                                        _gameWorld!.noteColor.withValues(alpha: 0.2),
-                                      ],
-                                    )
-                                        : null,
-                                    color: _keyActive[index] && _gameWorld == null
-                                        ? Colors.white.withValues(alpha: 0.08)
-                                        : (index % 2 == 0
-                                        ? const Color(0xFF14141E)
-                                        : const Color(0xFF1A1A26)),
-                                    border: Border(
-                                      right: BorderSide(
-                                        color: index < 3 ? Colors.white12 : Colors.transparent,
-                                        width: 1,
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        gradient: _keyActive[index] && _gameWorld != null
+                                            ? LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            _gameWorld!.noteColor.withValues(alpha: 0.5),
+                                            _gameWorld!.noteColor.withValues(alpha: 0.2),
+                                          ],
+                                        )
+                                            : null,
+                                        color: _keyActive[index] && _gameWorld == null
+                                            ? Colors.white.withValues(alpha: 0.08)
+                                            : (index % 2 == 0
+                                            ? const Color(0xFF14141E)
+                                            : const Color(0xFF1A1A26)),
+                                        border: Border(
+                                          right: BorderSide(
+                                            color: index < 3 ? Colors.white12 : Colors.transparent,
+                                            width: 1,
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                    if (_laneFlashIndex == index)
+                                      IgnorePointer(
+                                        child: AnimatedBuilder(
+                                          animation: _laneFlashController,
+                                          builder: (context, _) {
+                                            final v = 1 - _laneFlashController.value;
+                                            final flashColor = _gameWorld?.noteColor ?? const Color(0xFFFFFA65);
+                                            return Container(
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  begin: Alignment.topCenter,
+                                                  end: Alignment.bottomCenter,
+                                                  colors: [
+                                                    flashColor.withValues(alpha: 0.55 * v),
+                                                    Colors.white.withValues(alpha: 0.35 * v),
+                                                    flashColor.withValues(alpha: 0.25 * v),
+                                                  ],
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
                             );
                           }),
                         ),
+                      ),
+                      AnimatedBuilder(
+                        animation: _bgPulseController,
+                        builder: (context, _) {
+                          final v = _bgPulseController.value;
+                          final pulseAlpha = 0.16 * sin(pi * v);
+                          final pulseColor = _gameWorld?.noteColor ?? const Color(0xFFFFFA65);
+                          return Positioned.fill(
+                            child: IgnorePointer(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: RadialGradient(
+                                    center: const Alignment(0, 0.25),
+                                    radius: 1.0,
+                                    colors: [
+                                      pulseColor.withValues(alpha: pulseAlpha),
+                                      pulseColor.withValues(alpha: pulseAlpha * 0.4),
+                                      Colors.transparent,
+                                    ],
+                                    stops: const [0.0, 0.45, 1.0],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                       if (_gameWorld != null)
                         Positioned.fill(
@@ -477,15 +566,25 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               if (_currentJudge.isNotEmpty)
-                                Text(
-                                  _currentJudge,
-                                  style: TextStyle(
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.w900,
-                                    color: _judgeColor,
-                                    shadows: [
-                                      Shadow(color: _judgeColor.withValues(alpha: 0.8), blurRadius: 16),
-                                    ],
+                                AnimatedBuilder(
+                                  animation: _judgeAnimController,
+                                  builder: (context, child) => Opacity(
+                                    opacity: _judgeFadeAnim.value,
+                                    child: Transform.scale(
+                                      scale: _judgeScaleAnim.value,
+                                      child: child,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    _currentJudge,
+                                    style: TextStyle(
+                                      fontSize: 26,
+                                      fontWeight: FontWeight.w900,
+                                      color: _judgeColor,
+                                      shadows: [
+                                        Shadow(color: _judgeColor.withValues(alpha: 0.8), blurRadius: 16),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               const SizedBox(height: 6),

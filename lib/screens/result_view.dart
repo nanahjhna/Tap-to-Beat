@@ -11,8 +11,33 @@ class ResultView extends StatefulWidget {
   State<ResultView> createState() => _ResultViewState();
 }
 
-class _ResultViewState extends State<ResultView> {
+class _ResultViewState extends State<ResultView> with SingleTickerProviderStateMixin {
   bool _rewardGiven = false;
+  late final AnimationController _rankAnimController;
+  late final Animation<double> _rankScaleAnim;
+  late final Animation<double> _rankFadeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _rankAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _rankScaleAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _rankAnimController, curve: Curves.elasticOut),
+    );
+    _rankFadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _rankAnimController, curve: const Interval(0.0, 0.4, curve: Curves.easeIn)),
+    );
+    _rankAnimController.forward();
+  }
+
+  @override
+  void dispose() {
+    _rankAnimController.dispose();
+    super.dispose();
+  }
 
   String _calculateRank(bool won, int score, int totalNotes) {
     if (!won) return 'F';
@@ -129,28 +154,38 @@ class _ResultViewState extends State<ResultView> {
                   // 📌 랭크 배지 (왼쪽에 여백을 주기 위해 Padding 추가)
                   Padding(
                     padding: const EdgeInsets.only(left: 12.0),
-                    child: Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: rankColor.withValues(alpha: 0.15),
-                        border: Border.all(color: rankColor, width: 3.5),
-                        boxShadow: [
-                          BoxShadow(
-                            color: rankColor.withValues(alpha: 0.4),
-                            blurRadius: 18,
-                            spreadRadius: 2,
-                          ),
-                        ],
+                    child: AnimatedBuilder(
+                      animation: _rankAnimController,
+                      builder: (context, child) => FadeTransition(
+                        opacity: _rankFadeAnim,
+                        child: Transform.scale(
+                          scale: _rankScaleAnim.value,
+                          child: child,
+                        ),
                       ),
-                      child: Center(
-                        child: Text(
-                          rank,
-                          style: TextStyle(
-                            fontSize: 50,
-                            fontWeight: FontWeight.w900,
-                            color: rankColor,
+                      child: Container(
+                        width: 90,
+                        height: 90,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: rankColor.withValues(alpha: 0.15),
+                          border: Border.all(color: rankColor, width: 3.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: rankColor.withValues(alpha: 0.4),
+                              blurRadius: 18,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Text(
+                            rank,
+                            style: TextStyle(
+                              fontSize: 50,
+                              fontWeight: FontWeight.w900,
+                              color: rankColor,
+                            ),
                           ),
                         ),
                       ),

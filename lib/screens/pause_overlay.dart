@@ -146,18 +146,35 @@ class _CountdownDialog extends StatefulWidget {
   State<_CountdownDialog> createState() => _CountdownDialogState();
 }
 
-class _CountdownDialogState extends State<_CountdownDialog> {
+class _CountdownDialogState extends State<_CountdownDialog> with SingleTickerProviderStateMixin {
   int _count = 3;
   late final Timer _timer;
+  late final AnimationController _animController;
+  late final Animation<double> _scaleAnim;
+  late final Animation<double> _fadeAnim;
 
   @override
   void initState() {
     super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _scaleAnim = Tween<double>(begin: 1.8, end: 1.0).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
+    );
+    _fadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animController, curve: const Interval(0.0, 0.5, curve: Curves.easeIn)),
+    );
+    _animController.forward();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_count > 1) {
         setState(() {
           _count--;
         });
+        _animController
+          ..reset()
+          ..forward();
       } else {
         _timer.cancel();
         if (mounted) {
@@ -170,6 +187,7 @@ class _CountdownDialogState extends State<_CountdownDialog> {
   @override
   void dispose() {
     _timer.cancel();
+    _animController.dispose();
     super.dispose();
   }
 
@@ -178,18 +196,28 @@ class _CountdownDialogState extends State<_CountdownDialog> {
     return Center(
       child: Material(
         color: Colors.transparent,
-        child: Text(
-          '$_count',
-          style: const TextStyle(
-            fontSize: 80,
-            fontWeight: FontWeight.w900,
-            color: Color(0xFFFFD166),
-            shadows: [
-              Shadow(
-                color: Colors.black,
-                blurRadius: 20,
-              ),
-            ],
+        child: AnimatedBuilder(
+          animation: _animController,
+          builder: (context, child) => FadeTransition(
+            opacity: _fadeAnim,
+            child: Transform.scale(
+              scale: _scaleAnim.value,
+              child: child,
+            ),
+          ),
+          child: Text(
+            '$_count',
+            style: const TextStyle(
+              fontSize: 80,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFFFFD166),
+              shadows: [
+                Shadow(
+                  color: Colors.black,
+                  blurRadius: 20,
+                ),
+              ],
+            ),
           ),
         ),
       ),
