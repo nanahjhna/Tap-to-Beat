@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/settings_provider.dart';
 import '../services/user_session.dart';
 import '../widgets/game_bottom_navigation.dart';
@@ -57,6 +58,13 @@ class _SettingsViewState extends State<SettingsView> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(AppTexts.get('loginSuccess'))),
     );
+  }
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   @override
@@ -193,6 +201,33 @@ class _SettingsViewState extends State<SettingsView> {
             ),
             const SizedBox(height: 14),
           ],
+
+          // 정보 섹션: 크레딧 / 개인정보 처리방침
+          Card(
+            color: const Color(0xFF221F42),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: Colors.white12),
+            ),
+            child: Column(
+              children: [
+                _InfoTile(
+                  icon: Icons.music_note_rounded,
+                  iconColor: const Color(0xFF9B59B6),
+                  label: AppTexts.get('credits'),
+                  onTap: () => Navigator.pushNamed(context, '/credits'),
+                ),
+                const Divider(color: Colors.white12, height: 1),
+                _InfoTile(
+                  icon: Icons.privacy_tip_outlined,
+                  iconColor: const Color(0xFF2ED573),
+                  label: AppTexts.get('privacyPolicy'),
+                  onTap: () => _openUrl('https://hdevpolic.netlify.app/'),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
         ],
       ),
     );
@@ -206,6 +241,43 @@ class _SettingsViewState extends State<SettingsView> {
           _getVersionString(context),
           const GameBottomNavigation(currentIndex: 3),
         ],
+      ),
+    );
+  }
+}
+
+class _InfoTile extends StatelessWidget {
+  const _InfoTile({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Icon(icon, color: iconColor),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15),
+            ),
+            const Spacer(),
+            const Icon(Icons.chevron_right, color: Colors.white38),
+          ],
+        ),
       ),
     );
   }

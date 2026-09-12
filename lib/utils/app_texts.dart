@@ -111,6 +111,9 @@ class AppTexts {
       'sfxVolume': '노트 타격음',
       'timingSync': '판정 타이밍 오프셋',
       'timingSyncDesc': '기기 레이턴시에 맞게 밀리초를 조절하세요.',
+      'credits': '크레딧',
+      'privacyPolicy': '개인정보 처리방침',
+      'creditsDesc': '본 게임에 수록된 곡의 원작자를 표기합니다.',
 
       // 하드코딩 방지 추가 키
       'adWatchOnce': '+ 광고 1회',
@@ -221,6 +224,9 @@ class AppTexts {
       'sfxVolume': 'Hit Sound Volume',
       'timingSync': 'Timing Sync Offset',
       'timingSyncDesc': 'Adjust audio latency in milliseconds.',
+      'credits': 'Credits',
+      'privacyPolicy': 'Privacy Policy',
+      'creditsDesc': 'The original creators of the tracks featured in this game.',
 
       // Additional keys
       'adWatchOnce': '+ 1 Ad',
@@ -331,6 +337,9 @@ class AppTexts {
       'sfxVolume': 'ノーツ打撃音',
       'timingSync': '判定タイミング調整',
       'timingSyncDesc': '端末のレイテンシに合わせてミリ秒を調整してください。',
+      'credits': 'クレジット',
+      'privacyPolicy': 'プライバシーポリシー',
+      'creditsDesc': '本ゲームに収録された楽曲の原作者を表記しています。',
 
       // 追加キー
       'adWatchOnce': '+ 広告1回',

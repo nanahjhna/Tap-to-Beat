@@ -244,6 +244,33 @@ class _StageSelectViewState extends State<StageSelectView> {
     return icons[(stageNum - 1) % icons.length];
   }
 
+  Color _rankColor(String rank) {
+    switch (rank.toUpperCase()) {
+      case 'S':
+        return const Color(0xFFFFD166);
+      case 'A':
+        return const Color(0xFF2ED573);
+      case 'B':
+        return const Color(0xFFFFA502);
+      case 'C':
+        return const Color(0xFF1E90FF);
+      case 'F':
+        return const Color(0xFFFF4757);
+      default:
+        return const Color(0xFF888888);
+    }
+  }
+
+  String _formatScore(int score) {
+    final s = score.toString();
+    final buf = StringBuffer();
+    for (int i = 0; i < s.length; i++) {
+      if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
+      buf.write(s[i]);
+    }
+    return buf.toString();
+  }
+
   void _goToPage(int page) {
     _pageController.animateToPage(
       page,
@@ -395,6 +422,7 @@ class _StageSelectViewState extends State<StageSelectView> {
             itemBuilder: (context, index) {
               final stage = stages[index];
               final isOwned = userProvider.isStageOwned(stage.stageNumber, stageTitle: stage.title);
+              final best = userProvider.bestResultForStage(stage.stageNumber);
               final diffColor = _getDifficultyColor(stage.difficulty);
 
               return AnimatedScale(
@@ -455,20 +483,22 @@ class _StageSelectViewState extends State<StageSelectView> {
                                           size: 35,
                                           color: diffColor,
                                         ),
-                                        if (stage.rank != '-')
+                                        if (best != null)
                                           Positioned(
                                             right: 6,
                                             top: 6,
                                             child: Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                                               decoration: BoxDecoration(
-                                                color: const Color(0xFFFFD166),
+                                                color: _rankColor(best.bestRank),
                                                 borderRadius: BorderRadius.circular(4),
                                               ),
                                               child: Text(
-                                                stage.rank,
-                                                style: const TextStyle(
-                                                  color: Colors.black,
+                                                best.bestRank,
+                                                style: TextStyle(
+                                                  color: (best.bestRank == 'C' || best.bestRank == 'F')
+                                                      ? Colors.white
+                                                      : Colors.black,
                                                   fontWeight: FontWeight.w900,
                                                   fontSize: 10,
                                                 ),
@@ -533,6 +563,25 @@ class _StageSelectViewState extends State<StageSelectView> {
                                       fontSize: 11,
                                     ),
                                   ),
+                                  if (best != null) ...[
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(Icons.emoji_events_rounded,
+                                            color: Color(0xFFFFD166), size: 14),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'BEST ${_formatScore(best.bestScore)}',
+                                          style: const TextStyle(
+                                            color: Color(0xFFFFD166),
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                   if (!isOwned) ...[
                                     const SizedBox(height: 6),
                                     Container(

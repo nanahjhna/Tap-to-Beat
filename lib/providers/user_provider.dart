@@ -12,6 +12,7 @@ class UserProvider extends ChangeNotifier {
   Set<String> _ownedEffects = {};
   Set<String> _equippedSongs = {};
   Set<String> _equippedEffects = {};
+  Map<int, ({int bestScore, String bestRank})> _bestResults = {};
 
   int get userId => _userId;
   int get coins => _coins;
@@ -37,6 +38,9 @@ class UserProvider extends ChangeNotifier {
   bool isSongEquipped(String itemId) => _equippedSongs.contains(itemId);
   bool isEffectEquipped(String itemId) => _equippedEffects.contains(itemId);
 
+  ({int bestScore, String bestRank})? bestResultForStage(int stageNumber) =>
+      _bestResults[stageNumber];
+
   // ── 곡/스테이지 보유 통합 판정 메서드 ──
   bool isStageOwned(int stageNumber, {String? stageTitle}) {
     final song = ShopData.allSongs.firstWhere(
@@ -59,7 +63,12 @@ class UserProvider extends ChangeNotifier {
     _coins = await _db.getCoins(_userId);
     _lastPlayedStageId = await _db.getLastPlayedStage(_userId);
     await _loadOwnedItems();
+    await _loadBestResults();
     notifyListeners();
+  }
+
+  Future<void> _loadBestResults() async {
+    _bestResults = await _db.getBestStageResults(_userId);
   }
 
   Future<void> _loadOwnedItems() async {
@@ -191,6 +200,8 @@ class UserProvider extends ChangeNotifier {
       _userId, stageId, score, maxCombo,
       perfect, good, bad, miss, rank, cleared,
     );
+    _bestResults = await _db.getBestStageResults(_userId);
+    notifyListeners();
   }
 
   // ── 퀘스트 / 업적 ──

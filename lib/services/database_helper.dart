@@ -232,6 +232,55 @@ class DatabaseHelper {
     return ((result.first['cnt'] as int?) ?? 0) > 0;
   }
 
+  Future<Map<int, ({int bestScore, String bestRank})>> getBestStageResults(int userId) async {
+    final db = await database;
+    final rows = await db.query(
+      'stage_results',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+      columns: ['stage_id', 'score', 'rank'],
+    );
+
+    final bests = <int, ({int bestScore, String bestRank})>{};
+    for (final row in rows) {
+      final stageId = row['stage_id'] as int?;
+      if (stageId == null) continue;
+      final score = row['score'] as int? ?? 0;
+      final rank = row['rank'] as String? ?? '-';
+
+      final current = bests[stageId];
+      final isScoreHigher = current == null || score > current.bestScore;
+      final isRankHigher = current == null ||
+          _rankValue(rank) > _rankValue(current.bestRank);
+      if (isScoreHigher || isRankHigher) {
+        final prevScore = current?.bestScore ?? score;
+        final prevRank = current?.bestRank ?? rank;
+        bests[stageId] = (
+          bestScore: isScoreHigher ? score : prevScore,
+          bestRank: isRankHigher ? rank : prevRank,
+        );
+      }
+    }
+    return bests;
+  }
+
+  int _rankValue(String rank) {
+    switch (rank.toUpperCase()) {
+      case 'S':
+        return 5;
+      case 'A':
+        return 4;
+      case 'B':
+        return 3;
+      case 'C':
+        return 2;
+      case 'F':
+        return 1;
+      default:
+        return 0;
+    }
+  }
+
   Future<bool> isQuestClaimed(int userId, String questId) async {
     final db = await database;
     final result = await db.query('quest_claims',

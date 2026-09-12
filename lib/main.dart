@@ -20,6 +20,7 @@ import 'screens/account_link_view.dart';
 import 'screens/inventory_view.dart';
 import 'screens/quest_view.dart';
 import 'screens/notice_view.dart';
+import 'screens/credits_view.dart';
 import 'utils/app_texts.dart';
 
 void main() async {
@@ -100,6 +101,7 @@ class TapToBeatGameApp extends StatelessWidget {
         '/inventory': (context) => const InventoryView(),
         '/quest': (context) => const QuestView(),
         '/notice': (context) => const NoticeView(),
+        '/credits': (context) => const CreditsView(),
       },
     );
   }
