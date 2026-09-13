@@ -47,6 +47,7 @@ class StageGenerator {
   }
 
   static final Map<int, List<NoteData>> _chartCache = {};
+  static final Map<int, int> _chartEndMs = {};
 
   static Future<void> preloadCharts() async {
     for (final song in ShopData.allSongs) {
@@ -63,11 +64,24 @@ class StageGenerator {
           }).toList();
 
           _chartCache[song.stageNumber] = notes;
+          // 곡 전체 길이 = 차트 마지막 노트 시간 (로드 실패 시 폴백에도 사용)
+          _chartEndMs[song.stageNumber] =
+              notes.isEmpty ? 90000 : notes.last.timeMs;
         } catch (e) {
           debugPrint('Chart load error for ${song.name}: $e');
         }
       }
     }
+  }
+
+  /// 차트 전체를 사용하되 난이도별 밀도로 균등 샘플링한다.
+  /// (기존처럼 처음 N개만 자르면 곡이 중간에 끝나므로, 곡 끝까지 노트가 유지되도록 함)
+  static List<NoteData> _sampleByDifficulty(List<NoteData> source, int targetCount) {
+    if (source.isEmpty) return source;
+    final stride = source.length <= targetCount
+        ? 1
+        : max(1, (source.length / targetCount).round());
+    return [for (var i = 0; i < source.length; i += stride) source[i]];
   }
 
   static StageModel generateStage(int stageNum, {String difficulty = 'NORMAL'}) {
@@ -97,31 +111,7 @@ class StageGenerator {
       List<NoteData> chartNotes,
       ) {
     final targetNotes = playSpecs[diffKey]!['notes']!.toInt();
-    final notes = <NoteData>[];
-
-    int selectedIndex = 0;
-    for (int i = 0; i < targetNotes; i++) {
-      if (selectedIndex >= chartNotes.length) {
-        selectedIndex = 0;
-      }
-
-      final sourceNote = chartNotes[selectedIndex];
-
-      switch (diffKey) {
-        case 'EASY':
-          notes.add(NoteData(timeMs: sourceNote.timeMs, lane: sourceNote.lane));
-          selectedIndex += 2;
-          break;
-        case 'HARD':
-          notes.add(NoteData(timeMs: sourceNote.timeMs, lane: sourceNote.lane));
-          selectedIndex += 1;
-          break;
-        default:
-          notes.add(NoteData(timeMs: sourceNote.timeMs, lane: sourceNote.lane));
-          selectedIndex += 1;
-          break;
-      }
-    }
+    final notes = _sampleByDifficulty(chartNotes, targetNotes);
 
     return StageModel(
       stageNumber: song.stageNumber,
@@ -139,16 +129,20 @@ class StageGenerator {
 
   static StageModel _generateOriginal(int stageNum, String diffKey, int level, double rewardMul, ShopItem song) {
     final targetNotes = (playSpecs[diffKey]!['notes']! + stageNum * 5).toInt();
+    final endMs = _chartEndMs[stageNum] ?? 90000;
     final random = Random(42 + stageNum * 10 + level);
-    final notes = <NoteData>[];
+    final denseNotes = <NoteData>[];
     double timeMs = 1000.0;
+    final beatMs = 60000 / song.bpm!;
+    final stepMs = beatMs / 2;
 
-    for (int i = 0; i < targetNotes; i++) {
-      final lane = random.nextInt(4);
-      notes.add(NoteData(timeMs: timeMs.round(), lane: lane));
-      final beatMs = 60000 / song.bpm!;
-      timeMs += beatMs / 2;
+    // 차트 로드 실패 폴백: 곡 끝까지 8분음표 밀도로 생성 (짧게 끊기지 않도록)
+    while (timeMs <= endMs) {
+      denseNotes.add(NoteData(timeMs: timeMs.round(), lane: random.nextInt(4)));
+      timeMs += stepMs;
     }
+
+    final notes = _sampleByDifficulty(denseNotes, targetNotes);
 
     return StageModel(
       stageNumber: song.stageNumber,
