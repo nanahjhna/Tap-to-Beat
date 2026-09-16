@@ -42,9 +42,10 @@ class AppTexts {
       'login': '로그인',
       'guest': '게스트로 시작',
       'googleLogin': 'Google 로그인',
-      'loginGuideUpdated': '게스트로 시작하거나 나중에 Google 계정으로 전환할 수 있습니다.',
+      'loginGuideUpdated': '게스트로 시작하세요. Google 계정 연동은 업데이트 예정입니다.',
       'loginSuccess': '로그인되었습니다.',
       'switchToGoogle': 'Google 계정으로 전환',
+      'comingSoon': '업데이트 예정',
 
       // 스테이지 & 리듬 플레이
       'selectStage': '곡 선택',
@@ -134,9 +135,10 @@ class AppTexts {
       'login': 'Login',
       'guest': 'Continue as Guest',
       'googleLogin': 'Sign in with Google',
-      'loginGuideUpdated': 'Start as Guest or switch to Google account later.',
+      'loginGuideUpdated': 'Start as Guest. Google account sync is coming soon.',
       'loginSuccess': 'Logged in successfully.',
       'switchToGoogle': 'Switch to Google Account',
+      'comingSoon': 'Coming Soon',
 
       // Stage & Rhythm Play
       'selectStage': 'Select Track',
@@ -228,9 +230,10 @@ class AppTexts {
       'login': 'ログイン',
       'guest': 'ゲストで始める',
       'googleLogin': 'Googleでログイン',
-      'loginGuideUpdated': 'ゲストから始めて後でGoogleアカウントに切り替えられます。',
+      'loginGuideUpdated': 'ゲストで始めてください。Googleアカウント連携はアップデート予定です。',
       'loginSuccess': 'ログインしました。',
       'switchToGoogle': 'Googleアカウントに切り替え',
+      'comingSoon': 'アップデート予定',
 
       // ステージ & リズムプレイ
       'selectStage': '楽曲選択',

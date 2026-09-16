@@ -82,15 +82,15 @@ class LoginView extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
-              onPressed: () =>
-                  _handleLogin(context, 'google', AppTexts.get('googleLogin')),
+              onPressed: null,
               icon: const Icon(Icons.g_mobiledata),
               label: Text(
-                AppTexts.get('googleLogin'),
+                AppTexts.get('comingSoon'),
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.white,
+                foregroundColor: Colors.white38,
+                disabledForegroundColor: Colors.white38,
                 side: const BorderSide(color: Colors.white24),
               ),
             ),

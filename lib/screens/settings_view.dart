@@ -29,15 +29,6 @@ class _SettingsViewState extends State<SettingsView> {
     if (mounted) setState(() => _provider = value);
   }
 
-  Future<void> _convertToGoogle() async {
-    await UserSession.saveLoginProvider('google');
-    if (!mounted) return;
-    Navigator.pushReplacementNamed(context, '/main');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppTexts.get('loginSuccess'))),
-    );
-  }
-
   Future<void> _openUrl(String url) async {
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
@@ -170,7 +161,7 @@ class _SettingsViewState extends State<SettingsView> {
           ),
           const SizedBox(height: 10),
 
-          // 게스트 전용: Google 계정으로 전환 섹션
+          // 게스트 전용: Google 계정으로 전환 섹션 (업데이트 예정)
           if (_provider == 'guest') ...[
             Card(
               child: Padding(
@@ -179,23 +170,14 @@ class _SettingsViewState extends State<SettingsView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.g_mobiledata, color: AppColors.blue),
-                            const SizedBox(width: 8),
-                            Text(AppTexts.get('switchToGoogle'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          ],
-                       ),
-                        Text(
-                           '+${AppTexts.get('coins')} ${AppTexts.get('bonus')}',
-                          style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold),
-                        ),
+                        const Icon(Icons.g_mobiledata, color: AppColors.blue),
+                        const SizedBox(width: 8),
+                        Text(AppTexts.get('switchToGoogle'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       ],
                     ),
                     const SizedBox(height: 4),
-                      Text(
+                    Text(
                       AppTexts.get('googleSyncDesc'),
                       style: const TextStyle(fontSize: 11, color: Colors.white60),
                     ),
@@ -203,9 +185,17 @@ class _SettingsViewState extends State<SettingsView> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        style: appAccentButtonStyle,
-                        onPressed: _convertToGoogle,
-                        child: Text(AppTexts.get('switchToGoogle'), style: const TextStyle(fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white12,
+                          foregroundColor: Colors.white38,
+                          disabledBackgroundColor: Colors.white12,
+                          disabledForegroundColor: Colors.white38,
+                          minimumSize: const Size(0, 52),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        onPressed: null,
+                        child: Text(AppTexts.get('comingSoon')),
                       ),
                     ),
                   ],
