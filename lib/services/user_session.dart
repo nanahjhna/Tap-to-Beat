@@ -8,7 +8,4 @@ class UserSession {
 
   static Future<void> saveLoginProvider(String provider) async =>
       (await SharedPreferences.getInstance()).setString(_providerKey, provider);
-
-  static Future<void> logout() async =>
-      (await SharedPreferences.getInstance()).remove(_providerKey);
 }

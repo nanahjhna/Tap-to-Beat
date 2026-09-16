@@ -3,27 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/settings_provider.dart';
 import '../services/user_session.dart';
+import '../theme/app_theme.dart';
+import '../widgets/app_version_text.dart';
 import '../widgets/game_bottom_navigation.dart';
 import '../utils/app_texts.dart';
-import 'package:package_info_plus/package_info_plus.dart';
-
-Widget _getVersionString(BuildContext context) {
-  return FutureBuilder<PackageInfo>(
-    future: PackageInfo.fromPlatform(),
-    builder: (context, snapshot) {
-      String versionStr = 'TapToBeat Rhythm v1.0.0';
-      if (snapshot.hasData) {
-        final info = snapshot.data!;
-        versionStr = 'TapToBeat Rhythm v${info.version}+${info.buildNumber}';
-      }
-      return Text(
-        versionStr,
-        textAlign: TextAlign.center,
-        style: TextStyle(color: Colors.white.withValues(alpha: 0.45)),
-      );
-    },
-  );
-}
 
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key, this.embedded = false});
@@ -46,14 +29,9 @@ class _SettingsViewState extends State<SettingsView> {
     if (mounted) setState(() => _provider = value);
   }
 
-  Future<void> _logout() async {
-    await UserSession.logout();
-    if (mounted) Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-  }
-
   Future<void> _convertToGoogle() async {
     await UserSession.saveLoginProvider('google');
-    if (!context.mounted) return;
+    if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/main');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(AppTexts.get('loginSuccess'))),
@@ -77,11 +55,6 @@ class _SettingsViewState extends State<SettingsView> {
         children: [
           // BGM 볼륨 카드
           Card(
-            color: const Color(0xFF221F42),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: Colors.white12),
-            ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Column(
@@ -92,17 +65,17 @@ class _SettingsViewState extends State<SettingsView> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.music_note, color: Color(0xFFFFD166)),
+                          const Icon(Icons.music_note, color: AppColors.accent),
                           const SizedBox(width: 8),
                           Text(AppTexts.get('bgmVolume'), style: const TextStyle(fontWeight: FontWeight.bold)),
                         ],
                       ),
-                      Text('${(settings.bgmVolume * 100).toInt()}%', style: const TextStyle(color: Color(0xFFFFD166), fontWeight: FontWeight.bold)),
+                      Text('${(settings.bgmVolume * 100).toInt()}%', style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   Slider(
                     value: settings.bgmVolume,
-                    activeColor: const Color(0xFFFFD166),
+                    activeColor: AppColors.accent,
                     inactiveColor: Colors.white12,
                     onChanged: (v) => settings.setBgmVolume(v),
                   ),
@@ -114,11 +87,6 @@ class _SettingsViewState extends State<SettingsView> {
 
           // SFX 타격음 볼륨 카드
           Card(
-            color: const Color(0xFF221F42),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: Colors.white12),
-            ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Column(
@@ -129,19 +97,72 @@ class _SettingsViewState extends State<SettingsView> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.volume_up, color: Color(0xFF2ED573)),
+                          const Icon(Icons.volume_up, color: AppColors.green),
                           const SizedBox(width: 8),
                           Text(AppTexts.get('sfxVolume'), style: const TextStyle(fontWeight: FontWeight.bold)),
                         ],
                       ),
-                      Text('${(settings.sfxVolume * 100).toInt()}%', style: const TextStyle(color: Color(0xFF2ED573), fontWeight: FontWeight.bold)),
+                      Text('${(settings.sfxVolume * 100).toInt()}%', style: const TextStyle(color: AppColors.green, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   Slider(
                     value: settings.sfxVolume,
-                    activeColor: const Color(0xFF2ED573),
+                    activeColor: AppColors.green,
                     inactiveColor: Colors.white12,
                     onChanged: (v) => settings.setSfxVolume(v),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // 타이밍 동기화 오프셋 카드
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.tune, color: AppColors.purple),
+                          const SizedBox(width: 8),
+                          Text(
+                            AppTexts.get('timingSync'),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        '${settings.timingOffset.toInt()} ms',
+                        style: const TextStyle(
+                          color: AppColors.purple,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    AppTexts.get('timingSyncDesc'),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Colors.white60,
+                    ),
+                  ),
+                  Slider(
+                    value: settings.timingOffset
+                        .clamp(-200.0, 200.0),
+                    min: -200,
+                    max: 200,
+                    divisions: 80,
+                    activeColor: AppColors.purple,
+                    inactiveColor: Colors.white12,
+                    onChanged: (v) => settings.setTimingOffset(v),
                   ),
                 ],
               ),
@@ -152,11 +173,6 @@ class _SettingsViewState extends State<SettingsView> {
           // 게스트 전용: Google 계정으로 전환 섹션
           if (_provider == 'guest') ...[
             Card(
-              color: const Color(0xFF221F42),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: const BorderSide(color: Colors.white12),
-              ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Column(
@@ -167,14 +183,14 @@ class _SettingsViewState extends State<SettingsView> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.g_mobiledata, color: Color(0xFF1E90FF)),
+                            const Icon(Icons.g_mobiledata, color: AppColors.blue),
                             const SizedBox(width: 8),
                             Text(AppTexts.get('switchToGoogle'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                           ],
                        ),
                         Text(
                            '+${AppTexts.get('coins')} ${AppTexts.get('bonus')}',
-                          style: const TextStyle(color: Color(0xFFFFD166), fontWeight: FontWeight.bold),
+                          style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -187,10 +203,7 @@ class _SettingsViewState extends State<SettingsView> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFFD166),
-                          foregroundColor: Colors.black,
-                        ),
+                        style: appAccentButtonStyle,
                         onPressed: _convertToGoogle,
                         child: Text(AppTexts.get('switchToGoogle'), style: const TextStyle(fontWeight: FontWeight.bold)),
                       ),
@@ -204,23 +217,18 @@ class _SettingsViewState extends State<SettingsView> {
 
           // 정보 섹션: 크레딧 / 개인정보 처리방침
           Card(
-            color: const Color(0xFF221F42),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: Colors.white12),
-            ),
             child: Column(
               children: [
                 _InfoTile(
                   icon: Icons.music_note_rounded,
-                  iconColor: const Color(0xFF9B59B6),
+                  iconColor: AppColors.purple,
                   label: AppTexts.get('credits'),
                   onTap: () => Navigator.pushNamed(context, '/credits'),
                 ),
                 const Divider(color: Colors.white12, height: 1),
                 _InfoTile(
                   icon: Icons.privacy_tip_outlined,
-                  iconColor: const Color(0xFF2ED573),
+                  iconColor: AppColors.green,
                   label: AppTexts.get('privacyPolicy'),
                   onTap: () => _openUrl('https://hdevpolic.netlify.app/'),
                 ),
@@ -238,8 +246,13 @@ class _SettingsViewState extends State<SettingsView> {
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _getVersionString(context),
-          const GameBottomNavigation(currentIndex: 3),
+          const AppVersionText(
+            prefix: 'TapToBeat Rhythm ',
+            style: TextStyle(
+              color: Colors.white38,
+            ),
+          ),
+          const GameBottomNavigation(currentIndex: 3, showBanner: false),
         ],
       ),
     );

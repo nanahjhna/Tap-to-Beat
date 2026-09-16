@@ -162,6 +162,7 @@ class ShopData {
       name: 'Fighting_spirits',
       desc: 'dova-s.jp',
       coinPrice: 1000,
+      requireAd: true,
       color: Color(0xFF9B59B6),
       icon: Icons.music_note_rounded,
       type: 'music',
@@ -176,4 +177,12 @@ class ShopData {
   ];
 
   static List<ShopItem> get shopMusic => allSongs.where((s) => s.type == 'music').toList();
+
+  /// 스테이지 번호로 상점 곡을 찾아 반환 (없으면 null)
+  static ShopItem? songByStage(int stageNumber) {
+    for (final s in allSongs) {
+      if (s.type == 'music' && s.stageNumber == stageNumber) return s;
+    }
+    return null;
+  }
 }

@@ -5,6 +5,11 @@ import '../providers/user_provider.dart';
 import '../utils/app_texts.dart';
 import '../services/stage_generator.dart';
 import '../models/stage_model.dart';
+import '../models/effect_model.dart';
+import '../theme/app_theme.dart';
+import '../widgets/currency_badge.dart';
+import '../widgets/language_dialog.dart';
+import '../widgets/round_icon_button.dart';
 
 class LobbyTab extends StatefulWidget {
   const LobbyTab({super.key, this.currentTabIndex = 0});
@@ -15,64 +20,8 @@ class LobbyTab extends StatefulWidget {
 }
 
 class _LobbyTabState extends State<LobbyTab> {
-  void _showLanguageDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF201D3D),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          '${AppTexts.get('language')} / Language',
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildLangButton(ctx, '한국어'),
-            const SizedBox(height: 8),
-            _buildLangButton(ctx, 'English'),
-            const SizedBox(height: 8),
-            _buildLangButton(ctx, '日本語'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLangButton(BuildContext ctx, String langName) {
-    final isSelected = AppTexts.currentLang == langName;
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected
-              ? const Color(0xFFFFD166)
-              : Colors.white12,
-          foregroundColor: isSelected ? Colors.black : Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 0,
-        ),
-        onPressed: () async {
-          await AppTexts.setLanguage(langName);
-          if (ctx.mounted) Navigator.pop(ctx);
-          setState(() {});
-        },
-        child: Text(
-          langName,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ),
-    );
+  void _openLanguageDialog() {
+    showLanguageDialog(context, onLanguageChanged: () => setState(() {}));
   }
 
   @override
@@ -87,7 +36,7 @@ class _LobbyTabState extends State<LobbyTab> {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFF1B183B), Color(0xFF110F24)],
+              colors: [AppColors.cardTop, AppColors.bgDeepest],
             ),
           ),
         ),
@@ -110,33 +59,29 @@ class _LobbyTabState extends State<LobbyTab> {
                         child: Row(
                           children: [
                             Flexible(
-                              child: _Currency(
-                                icon: Icons.monetization_on_rounded,
+                              child: CurrencyBadge(
                                 value: '${userProvider.coins}',
                               ),
                             ),
                             const SizedBox(width: 8),
                             Row(
                               children: [
-                                _miniShortcut(
-                                  context,
-                                  Icons.bolt,
-                                  AppTexts.get('quest'),
+                                RoundIconButton(
+                                  icon: Icons.bolt,
+                                  label: AppTexts.get('quest'),
                                   route: '/quest',
                                 ),
                                 const SizedBox(width: 8),
-                                _miniShortcut(
-                                  context,
-                                  Icons.campaign,
-                                  AppTexts.get('notice'),
+                                RoundIconButton(
+                                  icon: Icons.campaign,
+                                  label: AppTexts.get('notice'),
                                   route: '/notice',
                                 ),
                                 const SizedBox(width: 8),
-                                _miniShortcut(
-                                  context,
-                                  Icons.language,
-                                  AppTexts.get('language'),
-                                  onTap: () => _showLanguageDialog(context),
+                                RoundIconButton(
+                                  icon: Icons.language,
+                                  label: AppTexts.get('language'),
+                                  onTap: _openLanguageDialog,
                                 ),
                               ],
                             ),
@@ -163,62 +108,6 @@ class _LobbyTabState extends State<LobbyTab> {
       ],
     );
   }
-}
-
-Widget _miniShortcut(
-  BuildContext context,
-  IconData icon,
-  String label, {
-  String? route,
-  VoidCallback? onTap,
-}) => Tooltip(
-  message: label,
-  child: Material(
-    color: const Color(0xFF2D2855),
-    shape: const CircleBorder(),
-    child: InkWell(
-      customBorder: const CircleBorder(),
-      onTap:
-          onTap ??
-          (route != null ? () => Navigator.pushNamed(context, route) : null),
-      child: Padding(
-        padding: const EdgeInsets.all(11),
-        child: Icon(icon, color: const Color(0xFFFFD166), size: 20),
-      ),
-    ),
-  ),
-);
-
-class _Currency extends StatelessWidget {
-  const _Currency({required this.icon, required this.value});
-  final IconData icon;
-  final String value;
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-    decoration: BoxDecoration(
-      color: Colors.black54,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: Colors.white12),
-    ),
-    child: Row(
-      children: [
-        Icon(icon, color: const Color(0xFFFFD166), size: 18),
-        const SizedBox(width: 5),
-        Flexible(
-          child: Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
 }
 
 // ---------------------------------------------------------
@@ -248,23 +137,6 @@ class _StageSelectViewState extends State<StageSelectView> {
     super.dispose();
   }
 
-  Color _getDifficultyColor(String diff) {
-    switch (diff.toUpperCase()) {
-      case 'EASY':
-        return const Color(0xFF2ED573);
-      case 'NORMAL':
-        return const Color(0xFF1E90FF);
-      case 'HARD':
-        return const Color(0xFFFFA502);
-      case 'EXPERT':
-        return const Color(0xFFFF4757);
-      case 'MASTER':
-        return const Color(0xFF9B59B6);
-      default:
-        return const Color(0xFFFFD166);
-    }
-  }
-
   IconData _getTrackIcon(int stageNum) {
     const icons = [
       Icons.music_note_rounded,
@@ -274,33 +146,6 @@ class _StageSelectViewState extends State<StageSelectView> {
       Icons.audiotrack_rounded,
     ];
     return icons[(stageNum - 1) % icons.length];
-  }
-
-  Color _rankColor(String rank) {
-    switch (rank.toUpperCase()) {
-      case 'S':
-        return const Color(0xFFFFD166);
-      case 'A':
-        return const Color(0xFF2ED573);
-      case 'B':
-        return const Color(0xFF1E90FF);
-      case 'C':
-        return const Color(0xFFFFA502);
-      case 'F':
-        return const Color(0xFFFF4757);
-      default:
-        return const Color(0xFF888888);
-    }
-  }
-
-  String _formatScore(int score) {
-    final s = score.toString();
-    final buf = StringBuffer();
-    for (int i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
-      buf.write(s[i]);
-    }
-    return buf.toString();
   }
 
   void _goToPage(int page) {
@@ -324,8 +169,6 @@ class _StageSelectViewState extends State<StageSelectView> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: const Color(0xFF201D3D),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -351,7 +194,7 @@ class _StageSelectViewState extends State<StageSelectView> {
               stage.stageNumber,
               difficulty: diff,
             );
-            final color = _getDifficultyColor(diff);
+            final color = difficultyColor(diff);
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: SizedBox(
@@ -400,12 +243,11 @@ class _StageSelectViewState extends State<StageSelectView> {
   }
 
   void _showLockPopup(BuildContext context, StageModel stage) {
-    final price = stage.rewardCoins * 3;
+    final song = ShopData.songByStage(stage.stageNumber);
+    final price = song?.coinPrice ?? stage.rewardCoins * 3;
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: const Color(0xFF201D3D),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
             const Icon(Icons.lock, color: Colors.white54, size: 20),
@@ -423,7 +265,7 @@ class _StageSelectViewState extends State<StageSelectView> {
           ],
         ),
         content: Text(
-          '$price ${AppTexts.get('coins')} + ${AppTexts.get('buyWithAd')}',
+          '$price ${AppTexts.get('buyWithAd')}',
           style: const TextStyle(color: Colors.white70, fontSize: 14),
         ),
         actions: [
@@ -439,10 +281,7 @@ class _StageSelectViewState extends State<StageSelectView> {
               Navigator.pop(dialogContext);
               Navigator.pushNamed(context, '/shop');
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFD166),
-              foregroundColor: Colors.black,
-            ),
+            style: appAccentButtonStyle,
             child: Text(AppTexts.get('shop')),
           ),
         ],
@@ -471,7 +310,7 @@ class _StageSelectViewState extends State<StageSelectView> {
                 stageTitle: stage.title,
               );
               final best = userProvider.bestResultForStage(stage.stageNumber);
-              final diffColor = _getDifficultyColor(stage.difficulty);
+              final diffColor = difficultyColor(stage.difficulty);
 
               return AnimatedScale(
                 scale: _currentPage == index ? 1.0 : 0.9,
@@ -482,7 +321,7 @@ class _StageSelectViewState extends State<StageSelectView> {
                     vertical: 10,
                   ),
                   child: Card(
-                    color: const Color(0xFF201D3D),
+                    color: AppColors.cardDark,
                     elevation: _currentPage == index ? 8 : 2,
                     clipBehavior: Clip.antiAlias,
                     shape: RoundedRectangleBorder(
@@ -501,7 +340,7 @@ class _StageSelectViewState extends State<StageSelectView> {
                         child: LayoutBuilder(
                           builder: (context, constraints) {
                             return SingleChildScrollView(
-                              physics: const BouncingScrollPhysics(),
+                              // 페이지 스와이프와의 제스처 경합을 줄이기 위해 기본 물리 적용
                               padding: const EdgeInsets.all(16),
                               child: ConstrainedBox(
                                 constraints: BoxConstraints(
@@ -517,7 +356,7 @@ class _StageSelectViewState extends State<StageSelectView> {
                                         gradient: LinearGradient(
                                           colors: [
                                             diffColor.withValues(alpha: 0.35),
-                                            const Color(0xFF141226),
+                                            AppColors.resultBg,
                                           ],
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
@@ -549,7 +388,7 @@ class _StageSelectViewState extends State<StageSelectView> {
                                                       vertical: 2,
                                                     ),
                                                 decoration: BoxDecoration(
-                                                  color: _rankColor(
+                                                  color: rankColor(
                                                     best.bestRank,
                                                   ),
                                                   borderRadius:
@@ -567,7 +406,7 @@ class _StageSelectViewState extends State<StageSelectView> {
                                                         ? Colors.white
                                                         : Colors.black,
                                                     fontWeight: FontWeight.w900,
-                                                    fontSize: 10,
+                                                    fontSize: 11,
                                                   ),
                                                 ),
                                               ),
@@ -625,7 +464,7 @@ class _StageSelectViewState extends State<StageSelectView> {
                                     Text(
                                       'BPM ${stage.bpm}  •  ${stage.noteCount} NOTES',
                                       style: const TextStyle(
-                                        color: Color(0xFF69B8FF),
+                                        color: AppColors.bpmBlue,
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -646,14 +485,14 @@ class _StageSelectViewState extends State<StageSelectView> {
                                         children: [
                                           const Icon(
                                             Icons.emoji_events_rounded,
-                                            color: Color(0xFFFFD166),
+                                            color: AppColors.accent,
                                             size: 14,
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
-                                            'BEST ${_formatScore(best.bestScore)}',
+                                            'BEST ${formatScore(best.bestScore)}',
                                             style: const TextStyle(
-                                              color: Color(0xFFFFD166),
+                                              color: AppColors.accent,
                                               fontSize: 11,
                                               fontWeight: FontWeight.w800,
                                             ),
@@ -663,35 +502,45 @@ class _StageSelectViewState extends State<StageSelectView> {
                                     ],
                                     if (!isOwned) ...[
                                       const SizedBox(height: 6),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.black54,
-                                          borderRadius: BorderRadius.circular(
-                                            10,
-                                          ),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            const Icon(
-                                              Icons.lock,
-                                              color: Colors.white54,
-                                              size: 12,
+                                      Builder(
+                                        builder: (context) {
+                                          final lockSong = ShopData.songByStage(
+                                            stage.stageNumber,
+                                          );
+                                          final lockPrice =
+                                              lockSong?.coinPrice ??
+                                              stage.rewardCoins * 3;
+                                          return Container(
+                                            padding:
+                                                const EdgeInsets.symmetric(
+                                                  horizontal: 12,
+                                                  vertical: 4,
+                                                ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.black54,
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
                                             ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              '${stage.rewardCoins * 3} ${AppTexts.get('coins')} + ${AppTexts.get('buyWithAd')}',
-                                              style: const TextStyle(
-                                                color: Colors.white54,
-                                                fontSize: 10,
-                                              ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(
+                                                  Icons.lock,
+                                                  color: Colors.white54,
+                                                  size: 12,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  '$lockPrice ${AppTexts.get('buyWithAd')}',
+                                                  style: const TextStyle(
+                                                    color: Colors.white54,
+                                                    fontSize: 11,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                          ],
-                                        ),
+                                          );
+                                        },
                                       ),
                                     ],
                                   ],
@@ -721,7 +570,7 @@ class _StageSelectViewState extends State<StageSelectView> {
                   margin: const EdgeInsets.symmetric(horizontal: 3),
                   decoration: BoxDecoration(
                     color: _currentPage == index
-                        ? const Color(0xFFFFD166)
+                        ? AppColors.accent
                         : Colors.white24,
                     borderRadius: BorderRadius.circular(3),
                   ),
@@ -742,7 +591,7 @@ class _StageSelectViewState extends State<StageSelectView> {
                   icon: Icon(
                     Icons.arrow_back_ios_new,
                     color: _currentPage > 0
-                        ? const Color(0xFFFFD166)
+                        ? AppColors.accent
                         : Colors.white24,
                     size: 24,
                   ),
@@ -762,7 +611,7 @@ class _StageSelectViewState extends State<StageSelectView> {
                   icon: Icon(
                     Icons.arrow_forward_ios,
                     color: _currentPage < stages.length - 1
-                        ? const Color(0xFFFFD166)
+                        ? AppColors.accent
                         : Colors.white24,
                     size: 24,
                   ),
@@ -776,7 +625,7 @@ class _StageSelectViewState extends State<StageSelectView> {
     return widget.embedded
         ? content
         : Scaffold(
-            backgroundColor: const Color(0xFF151329),
+            backgroundColor: AppColors.bgDeep,
             body: SafeArea(child: content),
           );
   }

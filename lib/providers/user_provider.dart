@@ -7,16 +7,13 @@ class UserProvider extends ChangeNotifier {
 
   int _userId = 1;
   int _coins = 0;
-  int _lastPlayedStageId = 1;
   Set<String> _ownedSongs = {};
   Set<String> _ownedEffects = {};
   Set<String> _equippedSongs = {};
   Set<String> _equippedEffects = {};
   Map<int, ({int bestScore, String bestRank})> _bestResults = {};
 
-  int get userId => _userId;
   int get coins => _coins;
-  int get lastPlayedStageId => _lastPlayedStageId;
 
   bool ownsSong(String itemId) {
     if (_ownedSongs.contains(itemId)) return true;
@@ -32,10 +29,8 @@ class UserProvider extends ChangeNotifier {
     return false;
   }
 
-  // ── 공개된 Set getter ──
+  // ── 공개 판정 getter ──
 
-  Set<String> get ownedSongs => _ownedSongs;
-  Set<String> get ownedEffects => _ownedEffects;
   bool ownsEffect(String itemId) => _ownedEffects.contains(itemId);
   bool isSongEquipped(String itemId) => _equippedSongs.contains(itemId);
   bool isEffectEquipped(String itemId) => _equippedEffects.contains(itemId);
@@ -66,7 +61,6 @@ class UserProvider extends ChangeNotifier {
   Future<void> init() async {
     _userId = await _db.getOrCreateUser();
     _coins = await _db.getCoins(_userId);
-    _lastPlayedStageId = await _db.getLastPlayedStage(_userId);
     await _loadOwnedItems();
     await _loadBestResults();
     notifyListeners();
@@ -164,18 +158,6 @@ class UserProvider extends ChangeNotifier {
 
   // ── 장착 ──
 
-  Future<void> toggleEquipSong(String itemId) async {
-    if (_equippedSongs.contains(itemId)) {
-      await _db.unequipItem(_userId, itemId);
-      _equippedSongs.remove(itemId);
-    } else {
-      await _db.equipItem(_userId, itemId);
-      _equippedSongs.clear();
-      _equippedSongs.add(itemId);
-    }
-    notifyListeners();
-  }
-
   Future<void> toggleEquipEffect(String itemId) async {
     if (_equippedEffects.contains(itemId)) {
       await _db.unequipItem(_userId, itemId);
@@ -192,7 +174,6 @@ class UserProvider extends ChangeNotifier {
 
   Future<void> setLastPlayedStage(int stageId) async {
     await _db.setLastPlayedStage(_userId, stageId);
-    _lastPlayedStageId = stageId;
     notifyListeners();
   }
 

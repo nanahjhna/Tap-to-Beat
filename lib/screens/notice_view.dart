@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
+import '../theme/app_theme.dart';
 import '../widgets/game_bottom_navigation.dart';
 import '../widgets/game_header.dart';
 import '../utils/app_texts.dart';
@@ -96,18 +97,18 @@ class _NoticeViewState extends State<NoticeView>
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xFF151329),
+    backgroundColor: AppColors.bgDeep,
     body: SafeArea(
       child: Column(
         children: [
           const GameHeader(titleKey: ''),
           Container(
-            color: const Color(0xFF1B183B),
+            color: AppColors.cardTop,
             child: TabBar(
               controller: _tab,
-              labelColor: const Color(0xFFFFD166),
+              labelColor: AppColors.accent,
               unselectedLabelColor: Colors.white60,
-              indicatorColor: const Color(0xFFFFD166),
+              indicatorColor: AppColors.accent,
               tabs: [
                 Tab(text: AppTexts.get('notice')),
                 Tab(text: AppTexts.get('attendance')),
@@ -123,7 +124,7 @@ class _NoticeViewState extends State<NoticeView>
         ],
       ),
     ),
-    bottomNavigationBar: const GameBottomNavigation(),
+    bottomNavigationBar: const GameBottomNavigation(showBanner: false),
   );
 
   Widget _notices() {
@@ -157,62 +158,69 @@ class _NoticeViewState extends State<NoticeView>
           '${_claimed.length} / 7',
           style: const TextStyle(
             fontSize: 13,
-            color: Color(0xFFFFD166),
+            color: AppColors.accent,
             fontWeight: FontWeight.w800,
           ),
         ),
         const SizedBox(height: 16),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 4,
-          mainAxisSpacing: 8,
-          crossAxisSpacing: 8,
-          childAspectRatio: 0.85,
-          children: List.generate(7, (i) {
-            final day = i + 1;
-            final claimed = _claimed.contains('attendance_$day');
-            final isNext = day == _nextDay;
-            return Container(
-              decoration: BoxDecoration(
-                color: claimed
-                    ? const Color(0xFF2ED573).withValues(alpha: 0.25)
-                    : isNext && _canClaimToday
-                    ? const Color(0xFFFFD166).withValues(alpha: 0.18)
-                    : const Color(0xFF2E266D),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: claimed
-                      ? const Color(0xFF2ED573)
-                      : isNext && _canClaimToday
-                      ? const Color(0xFFFFD166).withValues(alpha: 0.7)
-                      : Colors.white12,
+        // 7일을 한 줄에 표시 (비대칭 4+3 그리드 제거)
+        SizedBox(
+          height: 86,
+          child: Row(
+            children: List.generate(7, (i) {
+              final day = i + 1;
+              final claimed = _claimed.contains('attendance_$day');
+              final isNext = day == _nextDay;
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: claimed
+                          ? AppColors.green.withValues(alpha: 0.25)
+                          : isNext && _canClaimToday
+                          ? AppColors.accent.withValues(alpha: 0.18)
+                          : AppColors.cellDark,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: claimed
+                            ? AppColors.green
+                            : isNext && _canClaimToday
+                            ? AppColors.accent.withValues(alpha: 0.7)
+                            : Colors.white12,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '$day${AppTexts.get('dayUnit')}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          claimed ? '✓' : '+${_rewards[i]}',
+                          style: TextStyle(
+                            color: claimed
+                                ? AppColors.green
+                                : isNext && _canClaimToday
+                                ? AppColors.accent
+                                : Colors.white54,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '$day${AppTexts.get('dayUnit')}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    claimed ? '✓' : '+${_rewards[i]}',
-                    style: TextStyle(
-                      color: claimed ? const Color(0xFF2ED573) : Colors.white70,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
+              );
+            }),
+          ),
         ),
         const Spacer(),
         SizedBox(
@@ -220,7 +228,7 @@ class _NoticeViewState extends State<NoticeView>
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: _canClaimToday
-                  ? const Color(0xFFFFD166)
+                  ? AppColors.accent
                   : Colors.white12,
               foregroundColor: _canClaimToday ? Colors.black : Colors.white38,
               padding: const EdgeInsets.symmetric(vertical: 14),

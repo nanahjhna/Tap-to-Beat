@@ -99,7 +99,10 @@ class CreditsView extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: const GameBottomNavigation(currentIndex: 3),
+      bottomNavigationBar: const GameBottomNavigation(
+        currentIndex: 3,
+        showBanner: false,
+      ),
     );
   }
 }

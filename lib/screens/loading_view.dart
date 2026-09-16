@@ -3,7 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:in_app_update/in_app_update.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import '../theme/app_theme.dart';
 import '../utils/app_texts.dart';
+import '../widgets/app_version_text.dart';
 
 class LoadingView extends StatefulWidget {
   const LoadingView({super.key});
@@ -130,14 +132,72 @@ class _LoadingViewState extends State<LoadingView> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    body: Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const CircularProgressIndicator(),
-          const SizedBox(height: 18),
-          Text(AppTexts.get('loading')),
-        ],
+    backgroundColor: AppColors.bgDeep,
+    body: Container(
+      decoration: const BoxDecoration(
+        gradient: RadialGradient(
+          center: Alignment(0, -0.3),
+          radius: 1.3,
+          colors: [AppColors.bgGradientTop, AppColors.bgDeepest],
+        ),
+      ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.accent.withValues(alpha: 0.12),
+                        border: Border.all(
+                          color: AppColors.accent.withValues(alpha: 0.5),
+                          width: 2,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.headphones_rounded,
+                        size: 52,
+                        color: AppColors.accent,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    const Text(
+                      'TAP TO BEAT',
+                      style: TextStyle(
+                        letterSpacing: 4,
+                        fontSize: 24,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        shadows: [
+                          Shadow(color: AppColors.accentOrange, blurRadius: 16),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 18),
+                    Text(
+                      AppTexts.get('loading'),
+                      style: const TextStyle(
+                        color: Colors.white60,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const AppVersionText(
+              style: TextStyle(color: Colors.white38, fontSize: 12),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
       ),
     ),
   );

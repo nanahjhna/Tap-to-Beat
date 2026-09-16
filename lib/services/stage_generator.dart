@@ -122,7 +122,6 @@ class StageGenerator {
       difficultyLevel: level,
       audioPath: song.audioPath!,
       notes: notes,
-      rank: 'S',
       rewardCoins: (song.baseRewardCoins! * rewardMul).round(),
     );
   }
@@ -153,7 +152,6 @@ class StageGenerator {
       difficultyLevel: level,
       audioPath: song.audioPath!,
       notes: notes,
-      rank: 'S',
       rewardCoins: (song.baseRewardCoins! * rewardMul).round(),
     );
   }

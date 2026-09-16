@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/settings_provider.dart';
+import '../theme/app_theme.dart';
 import '../utils/app_texts.dart';
 
 class PauseOverlay extends StatelessWidget {
@@ -108,35 +111,16 @@ class PauseOverlay extends StatelessWidget {
                   child: Text(AppTexts.get('retry')),
                 ),
               ),
-              const SizedBox(height: 8),
-              // 설정
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.white24),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.pushNamed(context, '/settings');
-                  },
-                  child: Text(AppTexts.get('settings')),
-                ),
-              ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
+              // 게임 중 볼륨 조절 (설정 화면 이동 없이 바로 조절)
+              const _VolumePanel(),
+              const SizedBox(height: 12),
               // 로비로 나가기
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(
-                      0xFFFF4757,
-                    ).withValues(alpha: 0.85),
+                    backgroundColor: AppColors.red.withValues(alpha: 0.85),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
@@ -163,6 +147,93 @@ class PauseOverlay extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// 일시정지 중 노출되는 미니 볼륨 패널 (설정 이동 없이 실시간 반영)
+class _VolumePanel extends StatelessWidget {
+  const _VolumePanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final settings = context.watch<SettingsProvider>();
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _VolumeRow(
+            icon: Icons.music_note,
+            color: AppColors.accent,
+            label: AppTexts.get('bgmVolume'),
+            value: settings.bgmVolume,
+            onChanged: settings.setBgmVolume,
+          ),
+          const SizedBox(height: 2),
+          _VolumeRow(
+            icon: Icons.volume_up,
+            color: AppColors.green,
+            label: AppTexts.get('sfxVolume'),
+            value: settings.sfxVolume,
+            onChanged: settings.setSfxVolume,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VolumeRow extends StatelessWidget {
+  const _VolumeRow({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String label;
+  final double value;
+  final ValueChanged<double> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 18),
+        const SizedBox(width: 6),
+        Expanded(
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 3,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+            ),
+            child: Slider(
+              value: value,
+              activeColor: color,
+              inactiveColor: Colors.white12,
+              onChanged: onChanged,
+            ),
+          ),
+        ),
+        Text(
+          '${(value * 100).toInt()}',
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        ),
+      ],
     );
   }
 }

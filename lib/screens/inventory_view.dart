@@ -2,20 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../models/effect_model.dart';
+import '../models/stage_model.dart';
 import '../services/stage_generator.dart';
 import '../widgets/game_bottom_navigation.dart';
 import '../widgets/game_header.dart';
 import '../utils/app_texts.dart';
-
-ButtonStyle get _segmentedStyle => SegmentedButton.styleFrom(
-  backgroundColor: const Color(0xFF1B183B),
-  selectedBackgroundColor: const Color(0xFFFFD166),
-  selectedForegroundColor: Colors.black,
-  foregroundColor: Colors.white70,
-  side: const BorderSide(color: Colors.white12),
-  textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-  visualDensity: VisualDensity.compact,
-);
+import '../theme/app_theme.dart';
 
 class InventoryView extends StatefulWidget {
   const InventoryView({super.key, this.embedded = false});
@@ -46,7 +38,7 @@ class _InventoryViewState extends State<InventoryView> {
               ],
               selected: {_category},
               onSelectionChanged: (v) => setState(() => _category = v.first),
-              style: _segmentedStyle,
+              style: appSegmentedStyle,
             ),
           ),
           Expanded(child: _buildItemList(userProvider)),
@@ -59,7 +51,10 @@ class _InventoryViewState extends State<InventoryView> {
         : Scaffold(
             appBar: const GameHeader(titleKey: ''),
             body: content,
-            bottomNavigationBar: const GameBottomNavigation(currentIndex: 3),
+            bottomNavigationBar: const GameBottomNavigation(
+              currentIndex: 2,
+              showBanner: false,
+            ),
           );
   }
 
@@ -78,7 +73,7 @@ class _InventoryViewState extends State<InventoryView> {
               name: stage.title,
               desc: '${stage.artist} • BPM ${stage.bpm} • ${stage.difficulty}',
               type: 'song',
-              color: const Color(0xFF1E90FF),
+              color: AppColors.blue,
               icon: Icons.music_note_rounded,
               isEquipped: userProvider.isSongEquipped(itemId),
             ),
@@ -170,17 +165,23 @@ class _InventoryViewState extends State<InventoryView> {
     final isSong = item.type == 'song';
     // 곡은 장착 개념 없음 → 테두리/문구 강조도 적용 안 함
     final highlight = !isSong && item.isEquipped;
+    void onTap() {
+      if (isSong) _showSongDetail(userProvider, item);
+    }
+
     return Card(
-      color: const Color(0xFF221F42),
       margin: const EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         side: BorderSide(
           color: highlight ? item.color.withValues(alpha: 0.8) : Colors.white12,
           width: highlight ? 1.5 : 1.0,
         ),
       ),
-      child: ListTile(
+      child: InkWell(
+        onTap: isSong ? onTap : null,
+        borderRadius: BorderRadius.circular(16),
+        child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
           width: 48,
@@ -200,44 +201,193 @@ class _InventoryViewState extends State<InventoryView> {
           highlight ? '${AppTexts.get('equipped')} • ${item.desc}' : item.desc,
           style: TextStyle(
             fontSize: 12,
-            color: highlight ? const Color(0xFFFFD166) : Colors.white60,
+            color: highlight ? AppColors.accent : Colors.white60,
           ),
         ),
         trailing: isSong
-            ? Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: item.isBasic
-                      ? const Color(0xFF2ED573).withValues(alpha: 0.2)
-                      : Colors.white12,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  item.isBasic
-                      ? AppTexts.get('basicMusic')
-                      : AppTexts.get('owned'),
-                  style: TextStyle(
-                    color: item.isBasic ? Color(0xFF2ED573) : Colors.white70,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: item.isBasic
+                          ? AppColors.green.withValues(alpha: 0.2)
+                          : Colors.white12,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      item.isBasic
+                          ? AppTexts.get('basicMusic')
+                          : AppTexts.get('owned'),
+                      style: TextStyle(
+                        color: item.isBasic
+                            ? AppColors.green
+                            : Colors.white70,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.chevron_right, color: Colors.white38),
+                ],
               )
             : Switch(
                 value: item.isEquipped,
                 onChanged: (value) {
                   userProvider.toggleEquipEffect(item.id);
                 },
-                activeThumbColor: const Color(0xFFFFD166),
-                activeTrackColor: const Color(
-                  0xFFFFD166,
-                ).withValues(alpha: 0.3),
+                activeThumbColor: AppColors.accent,
+                activeTrackColor: AppColors.accent.withValues(alpha: 0.3),
                 inactiveThumbColor: Colors.white54,
                 inactiveTrackColor: Colors.white12,
               ),
+        ),
+      ),
+    );
+  }
+
+  /// 곡 카드 탭 시 보여줄 상세 다이얼로그 (난이도/최고 기록 표시)
+  void _showSongDetail(UserProvider userProvider, _InventoryItemData item) {
+    String? stageNumber;
+    if (item.id.startsWith('stage_')) {
+      stageNumber = item.id.split('_').last;
+    }
+
+    StageModel? stageModel;
+    if (stageNumber != null) {
+      final num = int.tryParse(stageNumber);
+      if (num != null) stageModel = StageGenerator.getStage(num);
+    }
+
+    final best = stageModel != null
+        ? userProvider.bestResultForStage(stageModel.stageNumber)
+        : null;
+
+    // null-safety: 클로저 내에서 non-null 타입 보장을 위해 로컬 캡처
+    final capturedStage = stageModel;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          item.name,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+            fontSize: 18,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              item.desc,
+              style: const TextStyle(color: Colors.white60, fontSize: 13),
+            ),
+            if (capturedStage != null) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: item.color.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: item.color.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: Text(
+                      '${capturedStage.difficulty} Lv.${capturedStage.difficultyLevel}',
+                      style: TextStyle(
+                        color: item.color,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${capturedStage.bpm} BPM • ${capturedStage.noteCount} NOTES',
+                    style: const TextStyle(
+                      color: Colors.white60,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (best != null) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: rankColor(best.bestRank).withValues(alpha: 0.15),
+                      border: Border.all(color: rankColor(best.bestRank)),
+                    ),
+                    child: Center(
+                      child: Text(
+                        best.bestRank,
+                        style: TextStyle(
+                          color: rankColor(best.bestRank),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'BEST ${formatScore(best.bestScore)}',
+                    style: const TextStyle(
+                      color: AppColors.accent,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              AppTexts.get('back'),
+              style: const TextStyle(color: Colors.white70),
+            ),
+          ),
+          if (capturedStage != null)
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                Navigator.pushNamed(
+                  context,
+                  '/gamePlay',
+                  arguments: {
+                    'stage': capturedStage.stageNumber,
+                    'difficulty': capturedStage.difficulty,
+                  },
+                );
+              },
+              style: appAccentButtonStyle,
+              child: Text(AppTexts.get('selectStage')),
+            ),
+        ],
       ),
     );
   }

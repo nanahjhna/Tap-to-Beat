@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import '../services/user_session.dart';
 import '../utils/app_texts.dart';
 import '../widgets/ad_banner_widget.dart';
+import '../widgets/app_version_text.dart';
+import '../widgets/language_dialog.dart';
 
 class TitleView extends StatefulWidget {
   const TitleView({super.key});
@@ -12,14 +13,12 @@ class TitleView extends StatefulWidget {
 }
 
 class _TitleViewState extends State<TitleView> with TickerProviderStateMixin {
-  String _versionString = 'v1.0.0';
   late final AnimationController _pulseController;
   late final AnimationController _shimmerController;
 
   @override
   void initState() {
     super.initState();
-    _loadVersion();
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
@@ -37,75 +36,8 @@ class _TitleViewState extends State<TitleView> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  Future<void> _loadVersion() async {
-    final packageInfo = await PackageInfo.fromPlatform();
-    if (mounted) {
-      setState(() {
-        _versionString = 'v${packageInfo.version}+${packageInfo.buildNumber}';
-      });
-    }
-  }
-
-  void _showLanguageDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF201D3D),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          '${AppTexts.get('language')} / Language',
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildLangButton(ctx, '한국어'),
-            const SizedBox(height: 8),
-            _buildLangButton(ctx, 'English'),
-            const SizedBox(height: 8),
-            _buildLangButton(ctx, '日本語'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLangButton(BuildContext ctx, String langName) {
-    final isSelected = AppTexts.currentLang == langName;
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected
-              ? const Color(0xFFFFD166)
-              : Colors.white12,
-          foregroundColor: isSelected ? Colors.black : Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 0,
-        ),
-        onPressed: () async {
-          await AppTexts.setLanguage(langName);
-          if (ctx.mounted) {
-            Navigator.pop(ctx);
-            setState(() {}); // 언어 변경 후 화면 갱신
-          }
-        },
-        child: Text(
-          langName,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ),
-    );
+  void _openLanguageDialog() {
+    showLanguageDialog(context, onLanguageChanged: () => setState(() {}));
   }
 
   @override
@@ -255,7 +187,7 @@ class _TitleViewState extends State<TitleView> with TickerProviderStateMixin {
                   shape: const CircleBorder(),
                   child: InkWell(
                     customBorder: const CircleBorder(),
-                    onTap: () => _showLanguageDialog(context),
+                    onTap: _openLanguageDialog,
                     child: const Padding(
                       padding: EdgeInsets.all(11),
                       child: Icon(
@@ -269,22 +201,22 @@ class _TitleViewState extends State<TitleView> with TickerProviderStateMixin {
               ),
             ),
           ),
-          // 화면 최하단에 배치된 배너 위젯
-          const Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: AdBannerWidget(),
-          ),
-          // 배너 위쪽에 위치하도록 조정된 버전 텍스트
+          // 화면 최하단: 버전 텍스트 + 배너 (Column으로 겹침 방지)
           Positioned(
-            bottom: 65,
             left: 0,
             right: 0,
-            child: Text(
-              _versionString,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white38, fontSize: 12),
+            bottom: 0,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: const AppVersionText(
+                    style: TextStyle(color: Colors.white38, fontSize: 12),
+                  ),
+                ),
+                const AdBannerWidget(),
+              ],
             ),
           ),
         ],

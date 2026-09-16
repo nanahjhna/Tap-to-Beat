@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 import '../utils/app_texts.dart';
 import '../widgets/ad_banner_widget.dart';
 
@@ -7,9 +8,13 @@ class GameBottomNavigation extends StatelessWidget {
     super.key,
     this.currentIndex = 0,
     this.onTabSelected,
+    this.showBanner = true,
   });
   final int currentIndex;
   final ValueChanged<int>? onTabSelected;
+
+  /// 배너 노출 여부 (로비/메인 허브에서만 true 유지)
+  final bool showBanner;
 
   // 📌 4개로 단축 (Lobby: 0, Shop: 1, Inventory: 2, Settings: 3)
   static const List<String> _routes = [
@@ -42,13 +47,13 @@ class GameBottomNavigation extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     mainAxisSize: MainAxisSize.min,
     children: [
-      const AdBannerWidget(),
+      if (showBanner) const AdBannerWidget(),
       BottomNavigationBar(
         // 만약 currentIndex가 4 이상(기존 Stage 탭 등)으로 들어올 경우 안전하게 0으로 보정
         currentIndex: currentIndex < _items.length ? currentIndex : 0,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF1B183B),
-        selectedItemColor: const Color(0xFFFFD166),
+        backgroundColor: AppColors.cardTop,
+        selectedItemColor: AppColors.accent,
         unselectedItemColor: Colors.white70,
         onTap: (index) {
           if (onTabSelected != null) {

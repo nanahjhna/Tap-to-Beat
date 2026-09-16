@@ -16,12 +16,12 @@ import 'screens/game_play_view.dart';
 import 'screens/result_view.dart';
 import 'screens/loading_view.dart';
 import 'screens/login_view.dart';
-import 'screens/account_link_view.dart';
 import 'screens/inventory_view.dart';
 import 'screens/quest_view.dart';
 import 'screens/notice_view.dart';
 import 'screens/credits_view.dart';
 import 'utils/app_texts.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -58,28 +58,7 @@ class TapToBeatGameApp extends StatelessWidget {
     return MaterialApp(
       title: 'TapToBeat',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF5C48D3),
-          brightness: Brightness.dark,
-        ),
-        scaffoldBackgroundColor: const Color(0xFF151329),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.transparent,
-          foregroundColor: Colors.white,
-          centerTitle: true,
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size(0, 52),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            textStyle: const TextStyle(fontWeight: FontWeight.w800),
-          ),
-        ),
-      ),
+      theme: AppTheme.dark(),
       // 📌 2. builder 속성을 추가하여 앱 전체에서 UpgradeAlert이 작동하도록 설정
       builder: (context, child) {
         return UpgradeAlert(
@@ -93,7 +72,6 @@ class TapToBeatGameApp extends StatelessWidget {
         '/': (context) => const TitleView(),
         '/loading': (context) => const LoadingView(),
         '/login': (context) => const LoginView(),
-        '/accountLink': (context) => const AccountLinkView(),
         '/main': (context) => const MainScreen(),
         '/shop': (context) => const ShopView(),
         '/settings': (context) => const SettingsView(),

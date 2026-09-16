@@ -11,7 +11,7 @@ class RhythmNoteComponent extends PositionComponent {
   bool isHit = false;
   bool isMissed = false;
 
-  Color _color;
+  final Color _color;
 
   RectangleComponent? _glowRect;
   RectangleComponent? _coreRect;
@@ -20,11 +20,10 @@ class RhythmNoteComponent extends PositionComponent {
   RhythmNoteComponent({
     required this.track,
     required this.targetTimeMs,
-    required Color color,
+    required this._color,
     required Vector2 size,
     required Vector2 position,
-  })  : _color = color,
-        super(size: size, position: position);
+  }) : super(size: size, position: position);
 
   @override
   Future<void> onLoad() async {
@@ -50,12 +49,6 @@ class RhythmNoteComponent extends PositionComponent {
     add(_glowRect!);
     add(_coreRect!);
     add(_edgeRect!);
-  }
-
-  void setColor(Color newColor) {
-    _color = newColor;
-    _glowRect?.paint.color = newColor.withValues(alpha: 0.35);
-    _coreRect?.paint.color = newColor;
   }
 }
 
@@ -260,13 +253,6 @@ class RhythmGameWorld extends FlameGame {
         size: Vector2(trackWidth - 8, 13),
         color: noteColor,
       ));
-    }
-  }
-
-  void updateNoteColor(Color newColor) {
-    noteColor = newColor;
-    for (final note in noteComponents) {
-      note.setColor(newColor);
     }
   }
 }

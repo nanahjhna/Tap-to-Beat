@@ -15,7 +15,6 @@ class StageModel {
   final List<NoteData> notes;
 
   // Extra UI states
-  final String rank;
   final int rewardCoins;
 
   StageModel({
@@ -27,10 +26,8 @@ class StageModel {
     required this.difficultyLevel,
     required this.audioPath,
     required this.notes,
-    this.rank = '-',
     this.rewardCoins = 150,
   });
 
-  int get id => stageNumber;
   int get noteCount => notes.length;
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../services/stage_generator.dart';
+import '../theme/app_theme.dart';
 import '../utils/app_texts.dart';
 
 class ResultView extends StatefulWidget {
@@ -53,21 +54,6 @@ class _ResultViewState extends State<ResultView>
     return 'C';
   }
 
-  Color _getRankColor(String rank) {
-    switch (rank) {
-      case 'S':
-        return const Color(0xFFFFD166);
-      case 'A':
-        return const Color(0xFF2ED573);
-      case 'B':
-        return const Color(0xFF1E90FF);
-      case 'C':
-        return const Color(0xFFFFA502);
-      default:
-        return const Color(0xFFFF4757);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final data =
@@ -103,19 +89,18 @@ class _ResultViewState extends State<ResultView>
     final songArtist = data['songArtist'] as String? ?? 'Matsuri Beats';
 
     final rank = _calculateRank(won, score, totalNotes);
-    final rankColor = _getRankColor(rank);
+    final rankC = rankColor(rank);
 
     final hitNotes = perfect + good;
     final accuracy = totalNotes > 0
         ? ((hitNotes / totalNotes) * 100).toStringAsFixed(1)
         : '0.0';
 
-    // 코인 보상 처리 (한 번만)
+    // 코인 보상 처리 (1번만)
     if (!_rewardGiven && mounted) {
       _rewardGiven = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final userProvider = context.read<UserProvider>();
-        // 클리어 기록 저장
         userProvider.saveStageResult(
           stage,
           score,
@@ -127,7 +112,6 @@ class _ResultViewState extends State<ResultView>
           rank,
           won,
         );
-        // 클리어 시 코인 지급
         if (won) {
           final stageData = StageGenerator.getStage(
             stage,
@@ -139,7 +123,7 @@ class _ResultViewState extends State<ResultView>
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF141226),
+      backgroundColor: AppColors.resultBg,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -147,7 +131,6 @@ class _ResultViewState extends State<ResultView>
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 10),
-              // 곡 정보 및 클리어 문구
               Text(
                 won ? AppTexts.get('victory') : AppTexts.get('defeat'),
                 style: TextStyle(
@@ -155,8 +138,8 @@ class _ResultViewState extends State<ResultView>
                   fontWeight: FontWeight.w900,
                   letterSpacing: 2,
                   color: won
-                      ? const Color(0xFFFFD166)
-                      : const Color(0xFFFF4757),
+                      ? AppColors.accent
+                      : AppColors.red,
                 ),
               ),
               const SizedBox(height: 6),
@@ -170,13 +153,9 @@ class _ResultViewState extends State<ResultView>
               ),
               const SizedBox(height: 24),
 
-              // 랭크 배지 & 스코어 (가로 배치)
-              // 랭크 배지 & 스코어 (간격 및 정렬 조정)
               Row(
-                mainAxisAlignment:
-                    MainAxisAlignment.spaceBetween, // 양 끝으로 배치하여 여백 확보
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // 📌 랭크 배지 (왼쪽에 여백을 주기 위해 Padding 추가)
                   Padding(
                     padding: const EdgeInsets.only(left: 12.0),
                     child: AnimatedBuilder(
@@ -193,11 +172,11 @@ class _ResultViewState extends State<ResultView>
                         height: 90,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: rankColor.withValues(alpha: 0.15),
-                          border: Border.all(color: rankColor, width: 3.5),
+                          color: rankC.withValues(alpha: 0.15),
+                          border: Border.all(color: rankC, width: 3.5),
                           boxShadow: [
                             BoxShadow(
-                              color: rankColor.withValues(alpha: 0.4),
+                              color: rankC.withValues(alpha: 0.4),
                               blurRadius: 18,
                               spreadRadius: 2,
                             ),
@@ -209,18 +188,17 @@ class _ResultViewState extends State<ResultView>
                             style: TextStyle(
                               fontSize: 50,
                               fontWeight: FontWeight.w900,
-                              color: rankColor,
+                              color: rankC,
                             ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                  // 📌 스코어 영역 (오른쪽 정렬)
                   Padding(
                     padding: const EdgeInsets.only(right: 12.0),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end, // 오른쪽 정렬
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         FittedBox(
                           fit: BoxFit.scaleDown,
@@ -251,14 +229,13 @@ class _ResultViewState extends State<ResultView>
               ),
               const SizedBox(height: 20),
 
-              // 상세 기록 카드
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF221F42),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white12),
-                ),
+Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.cardDark2,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white12),
+                  ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
@@ -270,23 +247,22 @@ class _ResultViewState extends State<ResultView>
               ),
               const SizedBox(height: 16),
 
-              // 판정 내역 카드
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1B1836),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white12),
-                ),
+Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.cardTop,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white12),
+                  ),
                 child: Column(
                   children: [
-                    _judgeRow('PERFECT', perfect, const Color(0xFF2ED573)),
+                    _judgeRow('PERFECT', perfect, AppColors.green),
                     const Divider(color: Colors.white10, height: 16),
-                    _judgeRow('GOOD', good, const Color(0xFF1E90FF)),
+                    _judgeRow('GOOD', good, AppColors.blue),
                     const Divider(color: Colors.white10, height: 16),
-                    _judgeRow('BAD', bad, const Color(0xFFFFA502)),
+                    _judgeRow('BAD', bad, AppColors.orange),
                     const Divider(color: Colors.white10, height: 16),
-                    _judgeRow('MISS', miss, const Color(0xFFFF4757)),
+                    _judgeRow('MISS', miss, AppColors.red),
                   ],
                 ),
               ),
@@ -306,14 +282,10 @@ class _ResultViewState extends State<ResultView>
                           vertical: 10,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(
-                            0xFFFFD166,
-                          ).withValues(alpha: 0.15),
+                          color: AppColors.accent.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: const Color(
-                              0xFFFFD166,
-                            ).withValues(alpha: 0.4),
+                            color: AppColors.accent.withValues(alpha: 0.4),
                           ),
                         ),
                         child: Row(
@@ -321,7 +293,7 @@ class _ResultViewState extends State<ResultView>
                           children: [
                             const Icon(
                               Icons.monetization_on,
-                              color: Color(0xFFFFD166),
+                              color: AppColors.accent,
                               size: 20,
                             ),
                             const SizedBox(width: 8),
@@ -330,7 +302,7 @@ class _ResultViewState extends State<ResultView>
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFFFFD166),
+                                color: AppColors.accent,
                               ),
                             ),
                           ],
@@ -342,7 +314,6 @@ class _ResultViewState extends State<ResultView>
 
               const SizedBox(height: 24),
 
-              // 동작 버튼들
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -353,10 +324,7 @@ class _ResultViewState extends State<ResultView>
                   ),
                   icon: const Icon(Icons.replay_rounded),
                   label: Text(AppTexts.get('retry')),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFD166),
-                    foregroundColor: Colors.black,
-                  ),
+                  style: appAccentButtonStyle,
                 ),
               ),
               const SizedBox(height: 10),

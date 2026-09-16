@@ -58,7 +58,6 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
     LogicalKeyboardKey.keyJ,
     LogicalKeyboardKey.keyK,
   ];
-  static const List<String> _keyLabels = ['', '', '', ''];
 
   StageModel? _stageData;
   RhythmGameWorld? _gameWorld;
@@ -262,6 +261,7 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
   void _handleKeyPress(int trackIdx) {
     if (!_isPlaying || _isPaused || _gameEnded) return;
 
+    HapticFeedback.lightImpact();
     setState(() => _keyActive[trackIdx] = true);
     _judgeTrack(trackIdx);
   }
@@ -761,7 +761,7 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
     );
   }
 
-  Widget _buildKeyGuide() {
+Widget _buildKeyGuide() {
     return Container(
       height: 76,
       color: Colors.black,
@@ -791,7 +791,9 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
                       : Colors.transparent,
                   border: Border(
                     top: BorderSide(
-                      color: isActive ? const Color(0xFFFFFA65) : Colors.white.withValues(alpha: 0.35),
+                      color: isActive
+                          ? const Color(0xFFFFFA65)
+                          : Colors.white.withValues(alpha: 0.35),
                       width: 2.5,
                     ),
                     bottom: BorderSide(
@@ -800,18 +802,11 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
                     ),
                     left: index == 0
                         ? BorderSide.none
-                        : BorderSide(color: Colors.white.withValues(alpha: 0.2), width: 1),
-                    right: BorderSide.none,
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    _keyLabels[index],
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: isActive ? Colors.white : const Color(0xFF888888),
+                        : BorderSide(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      width: 1,
                     ),
+                    right: BorderSide.none,
                   ),
                 ),
               ),

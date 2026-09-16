@@ -4,18 +4,11 @@ import '../providers/user_provider.dart';
 import '../models/effect_model.dart';
 import '../services/ad_reward_helper.dart';
 import '../widgets/game_bottom_navigation.dart';
+import '../widgets/currency_badge.dart';
 import '../widgets/game_header.dart';
 import '../utils/app_texts.dart';
-
-ButtonStyle get _segmentedStyle => SegmentedButton.styleFrom(
-  backgroundColor: const Color(0xFF1B183B),
-  selectedBackgroundColor: const Color(0xFFFFD166),
-  selectedForegroundColor: Colors.black,
-  foregroundColor: Colors.white70,
-  side: const BorderSide(color: Colors.white12),
-  textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-  visualDensity: VisualDensity.compact,
-);
+import '../theme/app_theme.dart';
+import '../widgets/round_icon_button.dart';
 
 class ShopView extends StatefulWidget {
   const ShopView({super.key, this.embedded = false});
@@ -46,8 +39,6 @@ class _ShopViewState extends State<ShopView> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF201D3D),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           AppTexts.get('confirmPurchase'),
           style: const TextStyle(
@@ -72,7 +63,7 @@ class _ShopViewState extends State<ShopView> {
               children: [
                 const Icon(
                   Icons.monetization_on,
-                  color: Color(0xFFFFD166),
+                  color: AppColors.accent,
                   size: 20,
                 ),
                 const SizedBox(width: 4),
@@ -123,10 +114,7 @@ class _ShopViewState extends State<ShopView> {
                     _purchaseItem(itemId, coinCost, requireAd);
                   }
                 : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFD166),
-              foregroundColor: Colors.black,
-            ),
+            style: appAccentButtonStyle,
             child: Text(AppTexts.get('yes')),
           ),
         ],
@@ -167,7 +155,9 @@ class _ShopViewState extends State<ShopView> {
     }
 
     if (success && mounted) {
-      _showCenterToast(AppTexts.get('purchaseSuccess'));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(AppTexts.get('purchaseSuccess'))));
     } else if (mounted) {
       ScaffoldMessenger.of(
         context,
@@ -175,51 +165,12 @@ class _ShopViewState extends State<ShopView> {
     }
   }
 
-  void _showCenterToast(String message) {
-    final overlay = Overlay.of(context);
-    late final OverlayEntry entry;
-    entry = OverlayEntry(
-      builder: (context) => Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
-          decoration: BoxDecoration(
-            color: const Color(0xFF221F42),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFFFD166), width: 1.5),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black54,
-                blurRadius: 20,
-                offset: Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.check_circle,
-                color: Color(0xFF2ED573),
-                size: 28,
-              ),
-              const SizedBox(width: 10),
-              Text(
-                message,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    overlay.insert(entry);
-    Future.delayed(const Duration(milliseconds: 1400), () {
-      entry.remove();
-    });
+void _openQuest(BuildContext context) {
+    Navigator.pushNamed(context, '/quest');
+  }
+
+  void _openAttendance(BuildContext context) {
+    Navigator.pushNamed(context, '/notice');
   }
 
   @override
@@ -230,27 +181,30 @@ class _ShopViewState extends State<ShopView> {
       top: widget.embedded,
       child: Column(
         children: [
-          // 상단 코인 표시
+          // 상단 코인 표시 & 획득 수단 진입점
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                CurrencyBadge(
+                      value: '${userProvider.coins}',
+                      iconSize: 20,
+                      textSize: 18,
+                      decorated: false,
+                    ),
                 Row(
                   children: [
-                    const Icon(
-                      Icons.monetization_on_rounded,
-                      color: Color(0xFFFFD166),
-                      size: 20,
+                    RoundIconButton(
+                      icon: Icons.bolt,
+                      label: AppTexts.get('quest'),
+                      onTap: () => _openQuest(context),
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${userProvider.coins}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 18,
-                      ),
+                    const SizedBox(width: 8),
+                    RoundIconButton(
+                      icon: Icons.campaign,
+                      label: AppTexts.get('attendance'),
+                      onTap: () => _openAttendance(context),
                     ),
                   ],
                 ),
@@ -268,7 +222,7 @@ class _ShopViewState extends State<ShopView> {
               ],
               selected: {_selectedTab},
               onSelectionChanged: (v) => setState(() => _selectedTab = v.first),
-              style: _segmentedStyle,
+              style: appSegmentedStyle,
             ),
           ),
 
@@ -289,7 +243,10 @@ class _ShopViewState extends State<ShopView> {
         : Scaffold(
             appBar: const GameHeader(titleKey: ''),
             body: content,
-            bottomNavigationBar: const GameBottomNavigation(currentIndex: 2),
+            bottomNavigationBar: const GameBottomNavigation(
+              currentIndex: 1,
+              showBanner: false,
+            ),
           );
   }
 
@@ -345,7 +302,6 @@ class _ShopViewState extends State<ShopView> {
       itemCount: allItems.length,
       itemBuilder: (context, index) {
         final item = allItems[index];
-        final isOwned = userProvider.ownsSong(item.id);
 
         return _shopCard(
           name: item.name,
@@ -354,7 +310,7 @@ class _ShopViewState extends State<ShopView> {
           color: item.color,
           coinPrice: item.coinPrice,
           requireAd: item.requireAd,
-          isOwned: isOwned,
+          isOwned: false,
           isBasic: item.isBasic,
           onTap: () => _showPurchaseDialog(
             item.id,
@@ -379,12 +335,7 @@ class _ShopViewState extends State<ShopView> {
     VoidCallback? onTap,
   }) {
     return Card(
-      color: const Color(0xFF221F42),
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Colors.white12),
-      ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
@@ -412,15 +363,13 @@ class _ShopViewState extends State<ShopView> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: isBasic
-                      ? const Color(0xFF2ED573).withValues(alpha: 0.2)
-                      : const Color(0xFF2ED573).withValues(alpha: 0.2),
+                  color: AppColors.green.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   isBasic ? AppTexts.get('basicMusic') : AppTexts.get('owned'),
                   style: const TextStyle(
-                    color: Color(0xFF2ED573),
+                    color: AppColors.green,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
@@ -429,7 +378,7 @@ class _ShopViewState extends State<ShopView> {
             : ElevatedButton(
                 onPressed: onTap,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFD166),
+                  backgroundColor: AppColors.accent,
                   foregroundColor: Colors.black,
                   minimumSize: const Size(70, 36),
                   padding: const EdgeInsets.symmetric(horizontal: 12),

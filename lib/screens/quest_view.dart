@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
+import '../theme/app_theme.dart';
 import '../widgets/game_bottom_navigation.dart';
 import '../widgets/game_header.dart';
 import '../utils/app_texts.dart';
@@ -99,7 +100,7 @@ class _QuestViewState extends State<QuestView> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xFF151329),
+    backgroundColor: AppColors.bgDeep,
     appBar: const GameHeader(titleKey: ''),
     body: ListView.builder(
       padding: const EdgeInsets.all(16),
@@ -113,12 +114,12 @@ class _QuestViewState extends State<QuestView> {
         final isClaimed = _claimed.contains(item['id']);
 
         return Card(
-          color: const Color(0xFF221F42),
+          color: AppColors.cardDark2,
           margin: const EdgeInsets.only(bottom: 12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
             side: BorderSide(
-              color: ready ? const Color(0xFFFFD166).withValues(alpha: 0.4) : Colors.white12,
+              color: ready ? AppColors.accent.withValues(alpha: 0.4) : Colors.white12,
             ),
           ),
           child: Padding(
@@ -141,13 +142,13 @@ class _QuestViewState extends State<QuestView> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFD166).withValues(alpha: 0.15),
+                        color: AppColors.accent.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         '+$reward ${AppTexts.get('coins')}',
                         style: const TextStyle(
-                            color: Color(0xFFFFD166),
+                            color: AppColors.accent,
                             fontWeight: FontWeight.bold,
                             fontSize: 12),
                       ),
@@ -167,7 +168,7 @@ class _QuestViewState extends State<QuestView> {
                     minHeight: 8,
                     backgroundColor: Colors.white12,
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      ready ? const Color(0xFF2ED573) : const Color(0xFF1E90FF),
+                      ready ? AppColors.green : AppColors.blue,
                     ),
                   ),
                 ),
@@ -192,7 +193,7 @@ class _QuestViewState extends State<QuestView> {
                     else
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: ready ? const Color(0xFFFFD166) : Colors.white12,
+                          backgroundColor: ready ? AppColors.accent : Colors.white12,
                           foregroundColor: ready ? Colors.black : Colors.white38,
                           minimumSize: const Size(80, 34),
                           padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -214,6 +215,6 @@ class _QuestViewState extends State<QuestView> {
         );
       },
     ),
-    bottomNavigationBar: const GameBottomNavigation(),
+    bottomNavigationBar: const GameBottomNavigation(showBanner: false),
   );
 }
