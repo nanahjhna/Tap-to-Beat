@@ -4,11 +4,10 @@ import '../providers/user_provider.dart';
 import '../models/effect_model.dart';
 import '../services/ad_reward_helper.dart';
 import '../widgets/game_bottom_navigation.dart';
-import '../widgets/currency_badge.dart';
 import '../widgets/game_header.dart';
+import '../widgets/top_status_bar.dart';
 import '../utils/app_texts.dart';
 import '../theme/app_theme.dart';
-import '../widgets/round_icon_button.dart';
 
 class ShopView extends StatefulWidget {
   const ShopView({super.key, this.embedded = false});
@@ -165,15 +164,7 @@ class _ShopViewState extends State<ShopView> {
     }
   }
 
-void _openQuest(BuildContext context) {
-    Navigator.pushNamed(context, '/quest');
-  }
-
-  void _openAttendance(BuildContext context) {
-    Navigator.pushNamed(context, '/notice');
-  }
-
-  @override
+@override
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
 
@@ -181,36 +172,8 @@ void _openQuest(BuildContext context) {
       top: widget.embedded,
       child: Column(
         children: [
-          // 상단 코인 표시 & 획득 수단 진입점
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                CurrencyBadge(
-                      value: '${userProvider.coins}',
-                      iconSize: 20,
-                      textSize: 18,
-                      decorated: false,
-                    ),
-                Row(
-                  children: [
-                    RoundIconButton(
-                      icon: Icons.bolt,
-                      label: AppTexts.get('quest'),
-                      onTap: () => _openQuest(context),
-                    ),
-                    const SizedBox(width: 8),
-                    RoundIconButton(
-                      icon: Icons.campaign,
-                      label: AppTexts.get('attendance'),
-                      onTap: () => _openAttendance(context),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+          // 상단 재화 표시 & 획득 수단 진입점 (로비와 동일)
+          TopStatusBar(onLanguageChanged: () => setState(() {})),
 
           // 카테고리 탭 (음악, 이펙트)
           Padding(
@@ -262,7 +225,7 @@ void _openQuest(BuildContext context) {
 
         return _shopCard(
           name: item.name,
-          desc: item.desc,
+          desc: item.localizedDesc,
           icon: item.icon,
           color: item.color,
           coinPrice: item.coinPrice,
@@ -305,7 +268,7 @@ void _openQuest(BuildContext context) {
 
         return _shopCard(
           name: item.name,
-          desc: item.desc,
+          desc: item.localizedDesc,
           icon: item.icon,
           color: item.color,
           coinPrice: item.coinPrice,

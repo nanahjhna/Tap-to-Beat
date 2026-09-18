@@ -16,7 +16,18 @@ class DatabaseHelper {
   Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
-    return await openDatabase(path, version: 1, onCreate: _createDB);
+    return await openDatabase(
+      path,
+      version: 2,
+      onCreate: _createDB,
+      onUpgrade: _onUpgrade,
+    );
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE users ADD COLUMN plays INTEGER DEFAULT 10');
+    }
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -24,6 +35,7 @@ class DatabaseHelper {
       CREATE TABLE users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         coins INTEGER DEFAULT 0,
+        plays INTEGER DEFAULT 10,
         last_played_stage_id INTEGER DEFAULT 1,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
@@ -72,6 +84,7 @@ class DatabaseHelper {
     // 기본 유저 생성 (게스트)
     final userId = await db.insert('users', {
       'coins': 0,
+      'plays': 10,
       'last_played_stage_id': 1,
     });
     // 기본 소유곡: stage_1
@@ -89,7 +102,7 @@ class DatabaseHelper {
     if (result.isNotEmpty) {
       return result.first['id'] as int;
     }
-    return await db.insert('users', {'coins': 0, 'last_played_stage_id': 1});
+    return await db.insert('users', {'coins': 0, 'plays': 10, 'last_played_stage_id': 1});
   }
 
   // ── 코인 ──
@@ -123,6 +136,43 @@ class DatabaseHelper {
     await db.update(
       'users',
       {'coins': current - amount},
+      where: 'id = ?',
+      whereArgs: [userId],
+    );
+    return true;
+  }
+
+  // ── 플레이 재화 ──
+
+  Future<int> getPlays(int userId) async {
+    final db = await database;
+    final result = await db.query(
+      'users',
+      where: 'id = ?',
+      whereArgs: [userId],
+    );
+    if (result.isEmpty) return 0;
+    return result.first['plays'] as int? ?? 0;
+  }
+
+  Future<void> addPlays(int userId, int amount) async {
+    final db = await database;
+    final current = await getPlays(userId);
+    await db.update(
+      'users',
+      {'plays': current + amount},
+      where: 'id = ?',
+      whereArgs: [userId],
+    );
+  }
+
+  Future<bool> spendPlay(int userId) async {
+    final db = await database;
+    final current = await getPlays(userId);
+    if (current < 1) return false;
+    await db.update(
+      'users',
+      {'plays': current - 1},
       where: 'id = ?',
       whereArgs: [userId],
     );

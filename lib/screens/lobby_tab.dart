@@ -4,12 +4,12 @@ import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../utils/app_texts.dart';
 import '../services/stage_generator.dart';
+import '../services/play_gate_helper.dart';
+import '../services/ad_reward_helper.dart';
 import '../models/stage_model.dart';
 import '../models/effect_model.dart';
 import '../theme/app_theme.dart';
-import '../widgets/currency_badge.dart';
-import '../widgets/language_dialog.dart';
-import '../widgets/round_icon_button.dart';
+import '../widgets/top_status_bar.dart';
 
 class LobbyTab extends StatefulWidget {
   const LobbyTab({super.key, this.currentTabIndex = 0});
@@ -20,14 +20,8 @@ class LobbyTab extends StatefulWidget {
 }
 
 class _LobbyTabState extends State<LobbyTab> {
-  void _openLanguageDialog() {
-    showLanguageDialog(context, onLanguageChanged: () => setState(() {}));
-  }
-
   @override
   Widget build(BuildContext context) {
-    final userProvider = context.watch<UserProvider>();
-
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -51,43 +45,7 @@ class _LobbyTabState extends State<LobbyTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // 상단 재화 및 메뉴 영역
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 16,
-                        ),
-                        child: Row(
-                          children: [
-                            Flexible(
-                              child: CurrencyBadge(
-                                value: '${userProvider.coins}',
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Row(
-                              children: [
-                                RoundIconButton(
-                                  icon: Icons.bolt,
-                                  label: AppTexts.get('quest'),
-                                  route: '/quest',
-                                ),
-                                const SizedBox(width: 8),
-                                RoundIconButton(
-                                  icon: Icons.campaign,
-                                  label: AppTexts.get('notice'),
-                                  route: '/notice',
-                                ),
-                                const SizedBox(width: 8),
-                                RoundIconButton(
-                                  icon: Icons.language,
-                                  label: AppTexts.get('language'),
-                                  onTap: _openLanguageDialog,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
+                      TopStatusBar(onLanguageChanged: () => setState(() {})),
                       const SizedBox(height: 8),
 
                       // 스테이지 선택 뷰가 고정된 높이를 가지고 보이도록 SizedBox로 감싸기
@@ -128,6 +86,7 @@ class _StageSelectViewState extends State<StageSelectView> {
   @override
   void initState() {
     super.initState();
+    AdRewardHelper.instance.loadAd();
     _pageController = PageController(viewportFraction: 0.85);
   }
 
@@ -200,15 +159,12 @@ class _StageSelectViewState extends State<StageSelectView> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     Navigator.pop(dialogContext);
-                    Navigator.pushNamed(
+                    await tryStartGame(
                       context,
-                      '/gamePlay',
-                      arguments: {
-                        'stage': stage.stageNumber,
-                        'difficulty': diff,
-                      },
+                      stage: stage.stageNumber,
+                      difficulty: diff,
                     );
                   },
                   style: ElevatedButton.styleFrom(
