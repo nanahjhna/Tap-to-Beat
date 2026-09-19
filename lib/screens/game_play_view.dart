@@ -42,6 +42,7 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
   bool _isPlaying = false;
   bool _isPaused = false;
   bool _gameEnded = false;
+  bool _audioDisposed = false;
 
   int _countPerfect = 0;
   int _countGood = 0;
@@ -183,6 +184,9 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
     final soundPath = _stageData?.audioPath ?? 'sounds/MikoshiMayhem.mp3';
 
     try {
+      // 광고 재생 후 남은 오디오 포커스/네이티브 상태를 초기화한 뒤 재생을 시작한다.
+      // stop()은 광고로 인해 고착된 네이티브 playing 플래그와 오디오 포커스를 해제한다.
+      await _audioPlayer.stop();
       await _audioPlayer.setVolume(settingsProvider.bgmVolume);
 
       // 오디오 버퍼링 지연 및 싱크 어긋남 방지를 위해 소스 선적재 후 재생
@@ -196,10 +200,14 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
     if (!mounted || _isPaused || _gameEnded) return;
 
     try {
-      await _audioPlayer.resume();
+      // resume() 대신 play()로 시작해 desired state를 확실히 재생 상태로 전환한다.
+      await _audioPlayer.play(AssetSource(soundPath));
     } catch (e) {
       debugPrint('Audio playback error: $e');
     }
+
+    // 광고로 인한 무음/포커스 실패 상태 감지 시 자동 복구 (1회 재시도)
+    _scheduleAudioWatchdog(soundPath);
 
     _stopwatch.reset();
     _stopwatch.start();
@@ -211,6 +219,28 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
       }
       _checkGameTick();
     });
+  }
+
+  /// 광고 시청 직후 오디오 포커스 실패 등으로 재생이 시작되지 않았을 때
+  /// 자동으로 stop 후 1회 재시도한다. 실제로 소리가 나고 있는지는 위치 전진으로 판단한다.
+  Future<void> _scheduleAudioWatchdog(String soundPath) async {
+    await Future.delayed(const Duration(milliseconds: 700));
+    if (!mounted || _isPaused || _gameEnded || _audioDisposed) return;
+
+    try {
+      if (_audioPlayer.state != PlayerState.playing) return;
+      final position = await _audioPlayer.getCurrentPosition();
+      final progressed = position != null && position.inMilliseconds > 0;
+      if (!progressed) {
+        debugPrint('Audio watchdog: 재생이 감지되지 않아 재시작합니다.');
+        await _audioPlayer.stop();
+        if (!mounted) return;
+        await _audioPlayer.setVolume(context.read<SettingsProvider>().bgmVolume);
+        await _audioPlayer.play(AssetSource(soundPath));
+      }
+    } catch (e) {
+      debugPrint('Audio watchdog error: $e');
+    }
   }
 
   double _effectiveMs() {
@@ -448,6 +478,7 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
     _laneFlashController.dispose();
     _bgPulseController.dispose();
     _comboPopController.dispose();
+    _audioDisposed = true;
     _audioPlayer.dispose();
     _focusNode.dispose();
     super.dispose();
