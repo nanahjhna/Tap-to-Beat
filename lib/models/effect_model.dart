@@ -189,6 +189,23 @@ class ShopData {
       chartPath: 'assets/charts/FightingSpirits.json',
       baseRewardCoins: 200,
     ),
+    ShopItem(
+      id: 'Unyielding_Heart',
+      name: 'Unyielding_Heart',
+      desc: 'dova-s.jp',
+      coinPrice: 1000,
+      requireAd: true,
+      color: Color(0xFF9B59B6),
+      icon: Icons.music_note_rounded,
+      type: 'music',
+      isBasic: false,
+      stageNumber: 4,
+      bpm: 0,
+      artist: '風人',
+      audioPath: 'sounds/UnyieldingHeart.mp3',
+      chartPath: 'assets/charts/UnyieldingHeart.json',
+      baseRewardCoins: 200,
+    ),
   ];
 
   static List<ShopItem> get shopMusic => allSongs.where((s) => s.type == 'music').toList();
