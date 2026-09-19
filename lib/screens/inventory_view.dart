@@ -72,7 +72,7 @@ class _InventoryViewState extends State<InventoryView> {
             _InventoryItemData(
               id: itemId,
               name: stage.title,
-              desc: '${stage.artist} • BPM ${stage.bpm} • ${stage.difficulty}',
+              desc: '${stage.artist} • ${stage.difficulty}',
               type: 'song',
               color: AppColors.blue,
               icon: Icons.music_note_rounded,
@@ -318,7 +318,7 @@ class _InventoryViewState extends State<InventoryView> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '${capturedStage.bpm} BPM • ${capturedStage.noteCount} NOTES',
+                    '${capturedStage.noteCount} NOTES',
                     style: const TextStyle(
                       color: Colors.white60,
                       fontSize: 12,

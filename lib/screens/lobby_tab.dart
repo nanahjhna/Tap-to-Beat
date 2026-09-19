@@ -141,7 +141,7 @@ class _StageSelectViewState extends State<StageSelectView> {
             ),
             const SizedBox(height: 4),
             Text(
-              '${stage.artist} • BPM ${stage.bpm}',
+              stage.artist,
               style: const TextStyle(color: Colors.white60, fontSize: 13),
             ),
           ],
@@ -418,7 +418,7 @@ class _StageSelectViewState extends State<StageSelectView> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'BPM ${stage.bpm}  •  ${stage.noteCount} NOTES',
+                                      '${stage.noteCount} NOTES',
                                       style: const TextStyle(
                                         color: AppColors.bpmBlue,
                                         fontSize: 11,

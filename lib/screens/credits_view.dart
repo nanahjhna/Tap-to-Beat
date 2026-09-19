@@ -80,7 +80,7 @@ class CreditsView extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  '${song.artist ?? '-'}  •  BPM ${song.bpm ?? '-'}',
+                                  song.artist ?? '-',
                                   style: const TextStyle(
                                     color: Colors.white60,
                                     fontSize: 13,
