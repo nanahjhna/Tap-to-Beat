@@ -209,17 +209,20 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
 
     if (!mounted || _isPaused || _gameEnded) return;
 
-    // 📌 딜레이 없이 즉시 재생
-    try {
-      await _audioPlayer.play(AssetSource(soundPath));
-    } catch (e) {
-      debugPrint('Audio playback error: $e');
-    }
-
-    _scheduleAudioWatchdog(soundPath);
-
     _stopwatch.reset();
     _stopwatch.start();
+
+    // 📌 노터가 떨어지는 대기 시간(_leadInDelayMs) 후 음원 재생
+    Future.delayed(Duration(milliseconds: _leadInDelayMs.toInt()), () async {
+      if (!mounted || _isPaused || _gameEnded) return;
+      try {
+        await _audioPlayer.play(AssetSource(soundPath));
+      } catch (e) {
+        debugPrint('Audio playback error: $e');
+      }
+    });
+
+    _scheduleAudioWatchdog(soundPath);
 
     _gameLoopTimer?.cancel();
     _gameLoopTimer = Timer.periodic(const Duration(milliseconds: 16), (timer) {
@@ -248,9 +251,13 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
     }
   }
 
+  // 1. 대기 시간 정수 상수 추가 (예: 2000ms = 2초)
+  static const double _leadInDelayMs = 2000.0;
+
   double _effectiveMs() {
     final offset = context.read<SettingsProvider>().timingOffset;
-    return _stopwatch.elapsedMilliseconds.toDouble() - offset;
+    // 스톱워치가 0일 때 effectiveMs는 -2000ms가 됨
+    return _stopwatch.elapsedMilliseconds.toDouble() - offset - _leadInDelayMs;
   }
 
   void _checkGameTick() {
