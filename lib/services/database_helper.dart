@@ -80,20 +80,6 @@ class DatabaseHelper {
         FOREIGN KEY (user_id) REFERENCES users(id)
       )
     ''');
-
-    // 기본 유저 생성 (게스트)
-    final userId = await db.insert('users', {
-      'coins': 0,
-      'plays': 10,
-      'last_played_stage_id': 1,
-    });
-    // 기본 소유곡: stage_1
-    await db.insert('owned_items', {
-      'user_id': userId,
-      'item_id': 'stage_1',
-      'item_type': 'song',
-      'is_equipped': 1,
-    });
   }
 
   Future<int> getOrCreateUser() async {
@@ -102,44 +88,54 @@ class DatabaseHelper {
     if (result.isNotEmpty) {
       return result.first['id'] as int;
     }
-    return await db.insert('users', {'coins': 0, 'plays': 10, 'last_played_stage_id': 1});
+
+    // 유저가 없는 경우 초기 유저 및 기본 곡 지급을 트랜잭션으로 처리
+    return await db.transaction((txn) async {
+      final userId = await txn.insert('users', {
+        'coins': 0,
+        'plays': 10,
+        'last_played_stage_id': 1,
+      });
+      await txn.insert('owned_items', {
+        'user_id': userId,
+        'item_id': 'stage_1',
+        'item_type': 'song',
+        'is_equipped': 1,
+      });
+      return userId;
+    });
   }
 
-  // ── 코인 ──
+  // ── 코인 (SQL direct update 방식 적용) ──
 
   Future<int> getCoins(int userId) async {
     final db = await database;
     final result = await db.query(
       'users',
+      columns: ['coins'],
       where: 'id = ?',
       whereArgs: [userId],
     );
     if (result.isEmpty) return 0;
-    return result.first['coins'] as int;
+    return result.first['coins'] as int? ?? 0;
   }
 
   Future<void> addCoins(int userId, int amount) async {
     final db = await database;
-    final current = await getCoins(userId);
-    await db.update(
-      'users',
-      {'coins': current + amount},
-      where: 'id = ?',
-      whereArgs: [userId],
+    await db.rawUpdate(
+      'UPDATE users SET coins = coins + ? WHERE id = ?',
+      [amount, userId],
     );
   }
 
   Future<bool> spendCoins(int userId, int amount) async {
     final db = await database;
-    final current = await getCoins(userId);
-    if (current < amount) return false;
-    await db.update(
-      'users',
-      {'coins': current - amount},
-      where: 'id = ?',
-      whereArgs: [userId],
+    // 조건절에서 잔액을 확인하여 차감
+    final count = await db.rawUpdate(
+      'UPDATE users SET coins = coins - ? WHERE id = ? AND coins >= ?',
+      [amount, userId, amount],
     );
-    return true;
+    return count > 0; // 0보다 크면 차감 성공
   }
 
   // ── 플레이 재화 ──
@@ -148,6 +144,7 @@ class DatabaseHelper {
     final db = await database;
     final result = await db.query(
       'users',
+      columns: ['plays'],
       where: 'id = ?',
       whereArgs: [userId],
     );
@@ -157,34 +154,27 @@ class DatabaseHelper {
 
   Future<void> addPlays(int userId, int amount) async {
     final db = await database;
-    final current = await getPlays(userId);
-    await db.update(
-      'users',
-      {'plays': current + amount},
-      where: 'id = ?',
-      whereArgs: [userId],
+    await db.rawUpdate(
+      'UPDATE users SET plays = plays + ? WHERE id = ?',
+      [amount, userId],
     );
   }
 
   Future<bool> spendPlay(int userId) async {
     final db = await database;
-    final current = await getPlays(userId);
-    if (current < 1) return false;
-    await db.update(
-      'users',
-      {'plays': current - 1},
-      where: 'id = ?',
-      whereArgs: [userId],
+    final count = await db.rawUpdate(
+      'UPDATE users SET plays = plays - 1 WHERE id = ? AND plays >= 1',
+      [userId],
     );
-    return true;
+    return count > 0;
   }
 
   // ── 소유 아이템 ──
 
   Future<List<Map<String, dynamic>>> getOwnedItems(
-    int userId, {
-    String? type,
-  }) async {
+      int userId, {
+        String? type,
+      }) async {
     final db = await database;
     if (type != null) {
       return await db.query(
@@ -210,12 +200,12 @@ class DatabaseHelper {
     });
   }
 
-  // ── 장착 상태 ──
+  // ── 장착 상태 (트랜잭션으로 안전하게 교체) ──
 
   Future<List<Map<String, dynamic>>> getEquippedItems(
-    int userId, {
-    String? type,
-  }) async {
+      int userId, {
+        String? type,
+      }) async {
     final db = await database;
     if (type != null) {
       return await db.query(
@@ -233,27 +223,30 @@ class DatabaseHelper {
 
   Future<void> equipItem(int userId, String itemId) async {
     final db = await database;
-    // 같은 타입의 다른 아이템 장착 해제
-    final item = await db.query(
-      'owned_items',
-      where: 'user_id = ? AND item_id = ?',
-      whereArgs: [userId, itemId],
-    );
-    if (item.isNotEmpty) {
-      final itemType = item.first['item_type'] as String;
-      await db.update(
+    await db.transaction((txn) async {
+      final item = await txn.query(
         'owned_items',
-        {'is_equipped': 0},
-        where: 'user_id = ? AND item_type = ?',
-        whereArgs: [userId, itemType],
-      );
-      await db.update(
-        'owned_items',
-        {'is_equipped': 1},
         where: 'user_id = ? AND item_id = ?',
         whereArgs: [userId, itemId],
       );
-    }
+      if (item.isNotEmpty) {
+        final itemType = item.first['item_type'] as String;
+        // 같은 타입의 기존 장착 해제
+        await txn.update(
+          'owned_items',
+          {'is_equipped': 0},
+          where: 'user_id = ? AND item_type = ?',
+          whereArgs: [userId, itemType],
+        );
+        // 새로운 아이템 장착
+        await txn.update(
+          'owned_items',
+          {'is_equipped': 1},
+          where: 'user_id = ? AND item_id = ?',
+          whereArgs: [userId, itemId],
+        );
+      }
+    });
   }
 
   Future<void> unequipItem(int userId, String itemId) async {
@@ -272,11 +265,12 @@ class DatabaseHelper {
     final db = await database;
     final result = await db.query(
       'users',
+      columns: ['last_played_stage_id'],
       where: 'id = ?',
       whereArgs: [userId],
     );
     if (result.isEmpty) return 1;
-    return result.first['last_played_stage_id'] as int;
+    return result.first['last_played_stage_id'] as int? ?? 1;
   }
 
   Future<void> setLastPlayedStage(int userId, int stageId) async {
@@ -292,17 +286,17 @@ class DatabaseHelper {
   // ── 클리어 기록 ──
 
   Future<void> saveStageResult(
-    int userId,
-    int stageId,
-    int score,
-    int maxCombo,
-    int perfect,
-    int good,
-    int bad,
-    int miss,
-    String rank,
-    bool cleared,
-  ) async {
+      int userId,
+      int stageId,
+      int score,
+      int maxCombo,
+      int perfect,
+      int good,
+      int bad,
+      int miss,
+      String rank,
+      bool cleared,
+      ) async {
     final db = await database;
     await db.insert('stage_results', {
       'user_id': userId,
@@ -340,9 +334,10 @@ class DatabaseHelper {
     return ((result.first['cnt'] as int?) ?? 0) > 0;
   }
 
+  /// 스테이지별 최고 점수 및 최고 랭크 추출 (점수가 최고점일 때 갱신)
   Future<Map<int, ({int bestScore, String bestRank})>> getBestStageResults(
-    int userId,
-  ) async {
+      int userId,
+      ) async {
     final db = await database;
     final rows = await db.query(
       'stage_results',
@@ -359,36 +354,12 @@ class DatabaseHelper {
       final rank = row['rank'] as String? ?? '-';
 
       final current = bests[stageId];
-      final isScoreHigher = current == null || score > current.bestScore;
-      final isRankHigher =
-          current == null || _rankValue(rank) > _rankValue(current.bestRank);
-      if (isScoreHigher || isRankHigher) {
-        final prevScore = current?.bestScore ?? score;
-        final prevRank = current?.bestRank ?? rank;
-        bests[stageId] = (
-          bestScore: isScoreHigher ? score : prevScore,
-          bestRank: isRankHigher ? rank : prevRank,
-        );
+      // 최고 점수 갱신 시 랭크도 같이 최고 점수의 랭크로 정렬 유지
+      if (current == null || score > current.bestScore) {
+        bests[stageId] = (bestScore: score, bestRank: rank);
       }
     }
     return bests;
-  }
-
-  int _rankValue(String rank) {
-    switch (rank.toUpperCase()) {
-      case 'S':
-        return 5;
-      case 'A':
-        return 4;
-      case 'B':
-        return 3;
-      case 'C':
-        return 2;
-      case 'F':
-        return 1;
-      default:
-        return 0;
-    }
   }
 
   Future<bool> isQuestClaimed(int userId, String questId) async {
@@ -408,12 +379,11 @@ class DatabaseHelper {
 
   // ── 출석 (7일 연속) ──
 
-  /// 이전 출석 보상의 마지막 지급일을 반환한다. 없으면 null.
   Future<DateTime?> getLastAttendanceClaimDate(int userId) async {
     final db = await database;
     final result = await db.rawQuery(
       "SELECT MAX(claimed_at) AS last FROM quest_claims "
-      "WHERE user_id = ? AND quest_id LIKE 'attendance_%'",
+          "WHERE user_id = ? AND quest_id LIKE 'attendance_%'",
       [userId],
     );
     if (result.isEmpty) return null;

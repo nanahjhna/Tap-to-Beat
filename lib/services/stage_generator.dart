@@ -20,19 +20,40 @@ class StageGenerator {
 
   static const Map<String, Map<String, double>> playSpecs = {
     'EASY': {
-      'notes': 80, 'perfectMs': 100, 'goodMs': 160, 'badMs': 240,
-      'missGraceMs': 240, 'fallMs': 2000, 'missDmg': 4, 'badDmg': 1.5,
-      'healPerfect': 4, 'healGood': 2,
+      'notes': 80,
+      'perfectMs': 100,
+      'goodMs': 160,
+      'badMs': 240,
+      'missGraceMs': 240,
+      'fallMs': 2000,
+      'missDmg': 4,
+      'badDmg': 1.5,
+      'healPerfect': 4,
+      'healGood': 2,
     },
     'NORMAL': {
-      'notes': 140, 'perfectMs': 80, 'goodMs': 140, 'badMs': 210,
-      'missGraceMs': 200, 'fallMs': 1600, 'missDmg': 6, 'badDmg': 2.5,
-      'healPerfect': 3, 'healGood': 1.5,
+      'notes': 140,
+      'perfectMs': 80,
+      'goodMs': 140,
+      'badMs': 210,
+      'missGraceMs': 200,
+      'fallMs': 1600,
+      'missDmg': 6,
+      'badDmg': 2.5,
+      'healPerfect': 3,
+      'healGood': 1.5,
     },
     'HARD': {
-      'notes': 220, 'perfectMs': 65, 'goodMs': 125, 'badMs': 200,
-      'missGraceMs': 180, 'fallMs': 1300, 'missDmg': 7, 'badDmg': 3,
-      'healPerfect': 3, 'healGood': 1,
+      'notes': 220,
+      'perfectMs': 65,
+      'goodMs': 125,
+      'badMs': 200,
+      'missGraceMs': 180,
+      'fallMs': 1300,
+      'missDmg': 7,
+      'badDmg': 3,
+      'healPerfect': 3,
+      'healGood': 1,
     },
   };
 
@@ -48,10 +69,14 @@ class StageGenerator {
 
   static final Map<int, List<NoteData>> _chartCache = {};
   static final Map<int, int> _chartEndMs = {};
+  static bool _isPreloaded = false;
 
+  /// 모든 차트 프리로딩
   static Future<void> preloadCharts() async {
+    if (_isPreloaded) return;
+
     for (final song in ShopData.allSongs) {
-      if (song.chartPath != null) {
+      if (song.chartPath != null && song.chartPath!.isNotEmpty) {
         try {
           final data = await rootBundle.loadString(song.chartPath!);
           final List<dynamic> jsonList = jsonDecode(data);
@@ -63,6 +88,9 @@ class StageGenerator {
             );
           }).toList();
 
+          // 타임스탬프 순 정렬
+          notes.sort((a, b) => a.timeMs.compareTo(b.timeMs));
+
           _chartCache[song.stageNumber] = notes;
           _chartEndMs[song.stageNumber] =
           notes.isEmpty ? 90000 : notes.last.timeMs;
@@ -71,11 +99,13 @@ class StageGenerator {
         }
       }
     }
+    _isPreloaded = true;
   }
 
   /// 동일 타임스탬프(동시타) 그룹화 유지형 난이도 조절
-  static List<NoteData> _sampleByDifficulty(List<NoteData> source, int targetCount) {
-    if (source.isEmpty || source.length <= targetCount) return source;
+  static List<NoteData> _sampleByDifficulty(
+      List<NoteData> source, int targetCount) {
+    if (source.isEmpty || source.length <= targetCount) return List.from(source);
 
     // 타임스탬프 단위로 그룹화 (동시타 깨짐 방지)
     final Map<int, List<NoteData>> grouped = {};
@@ -84,12 +114,18 @@ class StageGenerator {
     }
 
     final keys = grouped.keys.toList()..sort();
-    final stride = max(1, (keys.length / (targetCount / 1.2)).round());
+    if (keys.isEmpty) return [];
 
+    final double step = keys.length / max(1, (targetCount / 1.2));
     final List<NoteData> sampled = [];
-    for (var i = 0; i < keys.length; i += stride) {
-      sampled.addAll(grouped[keys[i]]!);
+
+    double currentIdx = 0;
+    while (currentIdx < keys.length) {
+      final key = keys[currentIdx.toInt()];
+      sampled.addAll(grouped[key]!);
+      currentIdx += max(1.0, step);
     }
+
     return sampled;
   }
 
@@ -125,19 +161,20 @@ class StageGenerator {
     return StageModel(
       stageNumber: song.stageNumber,
       title: song.name,
-      artist: song.artist!,
-      bpm: song.bpm!,
+      artist: song.artist ?? 'Unknown Artist',
+      bpm: song.bpm ?? 120,
       difficulty: diffKey,
       difficultyLevel: level,
-      audioPath: song.audioPath!,
+      audioPath: song.audioPath ?? '',
       notes: notes,
-      rewardCoins: (song.baseRewardCoins! * rewardMul).round(),
+      rewardCoins: ((song.baseRewardCoins ?? 100) * rewardMul).round(),
     );
   }
 
   /// 리듬 패턴 엔진: 단순 반복 탈피 (계단, 트릴, 동시타, 16분 연타 조합)
   static StageModel _generateOriginal(
       int stageNum, String diffKey, int level, double rewardMul, ShopItem song) {
+    // 지정된 곡 길이가 없으면 기본 90초 설정
     final endMs = _chartEndMs[stageNum] ?? 90000;
     final random = Random(42 + stageNum * 10 + level);
     final notes = <NoteData>[];
@@ -175,8 +212,9 @@ class StageGenerator {
         }
         currentTime += beatMs * 2;
       }
-      // 3. 동시타 (HARD 50% 확률, NORMAL 25% 확률)
-      else if ((diffKey == 'HARD' && patternType < 80) || (diffKey == 'NORMAL' && patternType < 70)) {
+      // 3. 동시타 (HARD 80% 미만, NORMAL 70% 미만)
+      else if ((diffKey == 'HARD' && patternType < 80) ||
+          (diffKey == 'NORMAL' && patternType < 70)) {
         int lane1 = random.nextInt(4);
         int lane2 = (lane1 + 2) % 4; // 서로 떨어진 레인
         notes.add(NoteData(timeMs: currentTime.round(), lane: lane1));
@@ -195,16 +233,19 @@ class StageGenerator {
       }
     }
 
+    // 시간 순 정렬 보장
+    notes.sort((a, b) => a.timeMs.compareTo(b.timeMs));
+
     return StageModel(
       stageNumber: song.stageNumber,
       title: song.name,
-      artist: song.artist!,
-      bpm: song.bpm!,
+      artist: song.artist ?? 'Unknown Artist',
+      bpm: song.bpm ?? 130,
       difficulty: diffKey,
       difficultyLevel: level,
-      audioPath: song.audioPath!,
+      audioPath: song.audioPath ?? '',
       notes: notes,
-      rewardCoins: (song.baseRewardCoins! * rewardMul).round(),
+      rewardCoins: ((song.baseRewardCoins ?? 100) * rewardMul).round(),
     );
   }
 

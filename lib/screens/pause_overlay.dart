@@ -56,23 +56,34 @@ class PauseOverlay extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.pause_circle_outline,
-                color: Color(0xFFFFD166),
-                size: 48,
+              // ── 상단 아이콘 + 일시정지 타이틀 가로 배치 ──
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.pause_circle_outline,
+                    color: Color(0xFFFFD166),
+                    size: 32,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    AppTexts.get('pause'),
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFFFFD166),
+                      letterSpacing: 2,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 10),
-              Text(
-                AppTexts.get('pause'),
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFFFFD166),
-                  letterSpacing: 2,
-                ),
-              ),
-              const SizedBox(height: 20),
-              // 계속하기
+              const SizedBox(height: 16),
+
+              // ── 볼륨 조절 패널 ──
+              const _VolumePanel(),
+              const SizedBox(height: 16),
+
+              // ── 계속하기 버튼 ──
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -92,7 +103,8 @@ class PauseOverlay extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              // 다시하기 버튼
+
+              // ── 다시하기 버튼 ──
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
@@ -111,11 +123,9 @@ class PauseOverlay extends StatelessWidget {
                   child: Text(AppTexts.get('retry')),
                 ),
               ),
-              const SizedBox(height: 12),
-              // 게임 중 볼륨 조절 (설정 화면 이동 없이 바로 조절)
-              const _VolumePanel(),
-              const SizedBox(height: 12),
-              // 로비로 나가기
+              const SizedBox(height: 8),
+
+              // ── 로비로 나가기 버튼 ──
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -131,7 +141,7 @@ class PauseOverlay extends StatelessWidget {
                     Navigator.pushNamedAndRemoveUntil(
                       context,
                       '/main',
-                      (route) => false,
+                          (route) => false,
                     );
                   },
                   child: Text(

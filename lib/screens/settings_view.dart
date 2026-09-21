@@ -225,6 +225,7 @@ class _SettingsViewState extends State<SettingsView> {
           const SizedBox(height: 10),
 
           // Google 계정 연동 섹션
+          // Google 계정 연동 섹션
           if (_provider == 'google') ...[
             Card(
               child: Padding(
@@ -232,34 +233,37 @@ class _SettingsViewState extends State<SettingsView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.account_circle, color: AppColors.blue, size: 44),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _accountName ?? _accountEmail ?? 'Google',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                              ),
-                              if (_accountEmail != null)
-                                Text(
-                                  _accountEmail!,
-                                  style: const TextStyle(fontSize: 12, color: Colors.white60),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
+                    // 1. 아이콘
+                    const Icon(Icons.account_circle, color: AppColors.blue, size: 44),
+                    const SizedBox(height: 8),
+
+                    // 2. 이름 (없을 경우 이메일 또는 'Google')
+                    Text(
+                      _accountName ?? _accountEmail ?? 'Google',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
+                    const SizedBox(height: 2),
+
+                    // 3. 메일 주소
+                    if (_accountEmail != null)
+                      Text(
+                        _accountEmail!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white60,
+                        ),
+                      ),
                     const SizedBox(height: 12),
+
                     Text(
                       AppTexts.get('googleSyncDesc'),
                       style: const TextStyle(fontSize: 11, color: Colors.white60),
                     ),
                     const SizedBox(height: 8),
+
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
