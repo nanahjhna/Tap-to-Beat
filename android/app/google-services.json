@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "185826763880",
+    "project_id": "taptobeat-98b40",
+    "storage_bucket": "taptobeat-98b40.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:185826763880:android:fa5517a05c33d0473ec7dd",
+        "android_client_info": {
+          "package_name": "com.han.TapToBeat"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "185826763880-ig03ou7jh8olrvlpi8e73c5c2jo9253r.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArXn5vjAAAW0boeLTixU7U6LM-CpZtv0s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "185826763880-ig03ou7jh8olrvlpi8e73c5c2jo9253r.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "185826763880-c98nhes30600350oqbntt4dijjd758cs.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.han.TapToBeat"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

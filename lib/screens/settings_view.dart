@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/settings_provider.dart';
+import '../services/google_auth_service.dart';
 import '../services/user_session.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_version_text.dart';
@@ -17,6 +18,9 @@ class SettingsView extends StatefulWidget {
 
 class _SettingsViewState extends State<SettingsView> {
   String? _provider;
+  bool _isSigningIn = false;
+  String? _accountEmail;
+  String? _accountName;
 
   @override
   void initState() {
@@ -26,7 +30,66 @@ class _SettingsViewState extends State<SettingsView> {
 
   Future<void> _loadProvider() async {
     final value = await UserSession.loginProvider();
-    if (mounted) setState(() => _provider = value);
+    final email = await UserSession.googleEmail();
+    final name = await UserSession.googleDisplayName();
+    if (mounted) {
+      setState(() {
+        _provider = value;
+        _accountEmail = email;
+        _accountName = name;
+      });
+    }
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    setState(() => _isSigningIn = true);
+    final result = await GoogleAuthService.instance.signIn();
+    if (!mounted) return;
+    setState(() => _isSigningIn = false);
+
+    if (result.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result.errorMessage == 'cancelled'
+                ? AppTexts.get('googleSignInCancelled')
+                : AppTexts.get('googleSignInFailed'),
+          ),
+        ),
+      );
+      return;
+    }
+
+    await UserSession.saveLoginProvider('google');
+    await UserSession.saveGoogleAccount(
+      email: result.email,
+      displayName: result.displayName,
+    );
+    if (!mounted) return;
+    setState(() {
+      _provider = 'google';
+      _accountEmail = result.email;
+      _accountName = result.displayName;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '${AppTexts.get('googleLogin')} - ${AppTexts.get('loginSuccess')}',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleLogout() async {
+    await GoogleAuthService.instance.signOut();
+    await UserSession.clearGoogleAccount();
+    await UserSession.saveLoginProvider('guest');
+    if (!mounted) return;
+    setState(() {
+      _provider = 'guest';
+      _accountEmail = null;
+      _accountName = null;
+    });
   }
 
   Future<void> _openUrl(String url) async {
@@ -161,8 +224,62 @@ class _SettingsViewState extends State<SettingsView> {
           ),
           const SizedBox(height: 10),
 
-          // 게스트 전용: Google 계정으로 전환 섹션 (업데이트 예정)
-          if (_provider == 'guest') ...[
+          // Google 계정 연동 섹션
+          if (_provider == 'google') ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.account_circle, color: AppColors.blue, size: 44),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _accountName ?? _accountEmail ?? 'Google',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                              if (_accountEmail != null)
+                                Text(
+                                  _accountEmail!,
+                                  style: const TextStyle(fontSize: 12, color: Colors.white60),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      AppTexts.get('googleSyncDesc'),
+                      style: const TextStyle(fontSize: 11, color: Colors.white60),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white12,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(0, 52),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        onPressed: _isSigningIn ? null : _handleLogout,
+                        child: Text(AppTexts.get('logout')),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+          ] else if (_provider == 'guest') ...[
             Card(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -187,15 +304,19 @@ class _SettingsViewState extends State<SettingsView> {
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white12,
-                          foregroundColor: Colors.white38,
-                          disabledBackgroundColor: Colors.white12,
-                          disabledForegroundColor: Colors.white38,
+                          foregroundColor: Colors.white,
                           minimumSize: const Size(0, 52),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           textStyle: const TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        onPressed: null,
-                        child: Text(AppTexts.get('comingSoon')),
+                        onPressed: _isSigningIn ? null : _handleGoogleLogin,
+                        child: _isSigningIn
+                            ? const SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                              )
+                            : Text(AppTexts.get('googleLogin')),
                       ),
                     ),
                   ],

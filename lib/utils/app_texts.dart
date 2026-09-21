@@ -43,10 +43,13 @@ class AppTexts {
       'login': '로그인',
       'guest': '게스트로 시작',
       'googleLogin': 'Google 로그인',
-      'loginGuideUpdated': '게스트로 시작하세요. Google 계정 연동은 업데이트 예정입니다.',
+      'loginGuideUpdated': '게스트로 시작하거나 Google 계정으로 로그인할 수 있습니다.',
       'loginSuccess': '로그인되었습니다.',
       'switchToGoogle': 'Google 계정으로 전환',
       'comingSoon': '업데이트 예정',
+      'logout': '로그아웃',
+      'googleSignInFailed': 'Google 로그인에 실패했습니다. 잠시 후 다시 시도해주세요.',
+      'googleSignInCancelled': 'Google 로그인이 취소되었습니다.',
 
       // 스테이지 & 리듬 플레이
       'selectStage': '곡 선택',
@@ -149,10 +152,13 @@ class AppTexts {
       'login': 'Login',
       'guest': 'Continue as Guest',
       'googleLogin': 'Sign in with Google',
-      'loginGuideUpdated': 'Start as Guest. Google account sync is coming soon.',
+      'loginGuideUpdated': 'Start as Guest or sign in with your Google account.',
       'loginSuccess': 'Logged in successfully.',
       'switchToGoogle': 'Switch to Google Account',
       'comingSoon': 'Coming Soon',
+      'logout': 'Sign Out',
+      'googleSignInFailed': 'Failed to sign in with Google. Please try again later.',
+      'googleSignInCancelled': 'Google sign-in was cancelled.',
 
       // Stage & Rhythm Play
       'selectStage': 'Select Track',
@@ -257,10 +263,13 @@ class AppTexts {
       'login': 'ログイン',
       'guest': 'ゲストで始める',
       'googleLogin': 'Googleでログイン',
-      'loginGuideUpdated': 'ゲストで始めてください。Googleアカウント連携はアップデート予定です。',
+      'loginGuideUpdated': 'ゲストで始めるか、Googleアカウントでログインできます。',
       'loginSuccess': 'ログインしました。',
       'switchToGoogle': 'Googleアカウントに切り替え',
       'comingSoon': 'アップデート予定',
+      'logout': 'ログアウト',
+      'googleSignInFailed': 'Googleログインに失敗しました。しばらくしてからもう一度お試しください。',
+      'googleSignInCancelled': 'Googleログインがキャンセルされました。',
 
       // ステージ & リズムプレイ
       'selectStage': '楽曲選択',
