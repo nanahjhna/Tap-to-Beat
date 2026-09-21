@@ -20,17 +20,17 @@ class StageGenerator {
 
   static const Map<String, Map<String, double>> playSpecs = {
     'EASY': {
-      'notes': 60, 'perfectMs': 100, 'goodMs': 160, 'badMs': 240,
+      'notes': 80, 'perfectMs': 100, 'goodMs': 160, 'badMs': 240,
       'missGraceMs': 240, 'fallMs': 2000, 'missDmg': 4, 'badDmg': 1.5,
       'healPerfect': 4, 'healGood': 2,
     },
     'NORMAL': {
-      'notes': 110, 'perfectMs': 80, 'goodMs': 140, 'badMs': 210,
+      'notes': 140, 'perfectMs': 80, 'goodMs': 140, 'badMs': 210,
       'missGraceMs': 200, 'fallMs': 1600, 'missDmg': 6, 'badDmg': 2.5,
       'healPerfect': 3, 'healGood': 1.5,
     },
     'HARD': {
-      'notes': 170, 'perfectMs': 65, 'goodMs': 125, 'badMs': 200,
+      'notes': 220, 'perfectMs': 65, 'goodMs': 125, 'badMs': 200,
       'missGraceMs': 180, 'fallMs': 1300, 'missDmg': 7, 'badDmg': 3,
       'healPerfect': 3, 'healGood': 1,
     },
@@ -64,9 +64,8 @@ class StageGenerator {
           }).toList();
 
           _chartCache[song.stageNumber] = notes;
-          // 곡 전체 길이 = 차트 마지막 노트 시간 (로드 실패 시 폴백에도 사용)
           _chartEndMs[song.stageNumber] =
-              notes.isEmpty ? 90000 : notes.last.timeMs;
+          notes.isEmpty ? 90000 : notes.last.timeMs;
         } catch (e) {
           debugPrint('Chart load error for ${song.name}: $e');
         }
@@ -74,19 +73,29 @@ class StageGenerator {
     }
   }
 
-  /// 차트 전체를 사용하되 난이도별 밀도로 균등 샘플링한다.
-  /// (기존처럼 처음 N개만 자르면 곡이 중간에 끝나므로, 곡 끝까지 노트가 유지되도록 함)
+  /// 동일 타임스탬프(동시타) 그룹화 유지형 난이도 조절
   static List<NoteData> _sampleByDifficulty(List<NoteData> source, int targetCount) {
-    if (source.isEmpty) return source;
-    final stride = source.length <= targetCount
-        ? 1
-        : max(1, (source.length / targetCount).round());
-    return [for (var i = 0; i < source.length; i += stride) source[i]];
+    if (source.isEmpty || source.length <= targetCount) return source;
+
+    // 타임스탬프 단위로 그룹화 (동시타 깨짐 방지)
+    final Map<int, List<NoteData>> grouped = {};
+    for (var note in source) {
+      grouped.putIfAbsent(note.timeMs, () => []).add(note);
+    }
+
+    final keys = grouped.keys.toList()..sort();
+    final stride = max(1, (keys.length / (targetCount / 1.2)).round());
+
+    final List<NoteData> sampled = [];
+    for (var i = 0; i < keys.length; i += stride) {
+      sampled.addAll(grouped[keys[i]]!);
+    }
+    return sampled;
   }
 
   static StageModel generateStage(int stageNum, {String difficulty = 'NORMAL'}) {
     final song = ShopData.allSongs.firstWhere(
-      (s) => s.stageNumber == stageNum,
+          (s) => s.stageNumber == stageNum,
       orElse: () => ShopData.allSongs.first,
     );
 
@@ -126,22 +135,65 @@ class StageGenerator {
     );
   }
 
-  static StageModel _generateOriginal(int stageNum, String diffKey, int level, double rewardMul, ShopItem song) {
-    final targetNotes = (playSpecs[diffKey]!['notes']! + stageNum * 5).toInt();
+  /// 리듬 패턴 엔진: 단순 반복 탈피 (계단, 트릴, 동시타, 16분 연타 조합)
+  static StageModel _generateOriginal(
+      int stageNum, String diffKey, int level, double rewardMul, ShopItem song) {
     final endMs = _chartEndMs[stageNum] ?? 90000;
     final random = Random(42 + stageNum * 10 + level);
-    final denseNotes = <NoteData>[];
-    double timeMs = 1000.0;
-    final beatMs = 60000 / song.bpm!;
-    final stepMs = beatMs / 2;
+    final notes = <NoteData>[];
 
-    // 차트 로드 실패 폴백: 곡 끝까지 8분음표 밀도로 생성 (짧게 끊기지 않도록)
-    while (timeMs <= endMs) {
-      denseNotes.add(NoteData(timeMs: timeMs.round(), lane: random.nextInt(4)));
-      timeMs += stepMs;
+    final bpm = song.bpm ?? 130.0;
+    final beatMs = 60000 / bpm; // 1비트(4분음표) ms
+
+    double currentTime = 2000.0; // 시작 여유 시간 2초
+    int prevLane = -1;
+
+    while (currentTime < endMs) {
+      final patternType = random.nextInt(100);
+
+      // 1. HARD / NORMAL 일 때 높은 확률로 16분음표 트릴 (D-F-D-F)
+      if (diffKey != 'EASY' && patternType < 30) {
+        int laneA = random.nextInt(3);
+        int laneB = laneA + 1;
+        for (int i = 0; i < 4; i++) {
+          notes.add(NoteData(
+            timeMs: (currentTime + i * (beatMs / 4)).round(),
+            lane: i % 2 == 0 ? laneA : laneB,
+          ));
+        }
+        currentTime += beatMs;
+      }
+      // 2. 계단 패턴 (0 -> 1 -> 2 -> 3 또는 역순)
+      else if (patternType < 55) {
+        bool isReverse = random.nextBool();
+        for (int i = 0; i < 4; i++) {
+          int lane = isReverse ? (3 - i) : i;
+          notes.add(NoteData(
+            timeMs: (currentTime + i * (beatMs / 2)).round(),
+            lane: lane,
+          ));
+        }
+        currentTime += beatMs * 2;
+      }
+      // 3. 동시타 (HARD 50% 확률, NORMAL 25% 확률)
+      else if ((diffKey == 'HARD' && patternType < 80) || (diffKey == 'NORMAL' && patternType < 70)) {
+        int lane1 = random.nextInt(4);
+        int lane2 = (lane1 + 2) % 4; // 서로 떨어진 레인
+        notes.add(NoteData(timeMs: currentTime.round(), lane: lane1));
+        notes.add(NoteData(timeMs: currentTime.round(), lane: lane2));
+        currentTime += beatMs / 2;
+      }
+      // 4. 일반 단타 (이전 레인과 중복 회피)
+      else {
+        int lane = random.nextInt(4);
+        while (lane == prevLane) {
+          lane = random.nextInt(4);
+        }
+        prevLane = lane;
+        notes.add(NoteData(timeMs: currentTime.round(), lane: lane));
+        currentTime += beatMs / 2;
+      }
     }
-
-    final notes = _sampleByDifficulty(denseNotes, targetNotes);
 
     return StageModel(
       stageNumber: song.stageNumber,
