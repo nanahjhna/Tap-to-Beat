@@ -36,7 +36,9 @@ class GoogleAuthService {
 
   /// [GoogleSignIn.initialize]는 반드시 앱 전체에서 한 번만 호출해야 한다.
   Future<void> _ensureInitialized() =>
-      _initFuture ??= _googleSignIn.initialize();
+      _initFuture ??= _googleSignIn.initialize(
+        serverClientId: '101704680480-stqj0k4u5ive5amfltoqiqvc0e0itr2c.apps.googleusercontent.com',
+      );
 
   User? get currentUser => _auth.currentUser;
   String? get currentUid => _auth.currentUser?.uid;
@@ -49,7 +51,8 @@ class GoogleAuthService {
       await _googleSignIn.signOut();
 
       final account = await _googleSignIn.authenticate();
-      final idToken = account.authentication.idToken;
+      final auth = await account.authentication; // 💡 await 추가
+      final idToken = auth.idToken;
       if (idToken == null) {
         return const GoogleAuthResult(errorMessage: 'no_id_token');
       }

@@ -41,50 +41,48 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBldRalyQABO_dAOIM8MwmiDbHBbXJ0Ihs',
-    appId: '1:185826763880:web:964e3dc62de8ee9e3ec7dd',
-    messagingSenderId: '185826763880',
-    projectId: 'taptobeat-98b40',
-    authDomain: 'taptobeat-98b40.firebaseapp.com',
-    storageBucket: 'taptobeat-98b40.firebasestorage.app',
-    measurementId: 'G-LHF3LQW9NQ',
+    apiKey: 'AIzaSyBpd_Rbi0wzfPuJmRXzRbXBbKdDSN9dZog',
+    appId: '1:101704680480:web:950d31c617d4394a816845',
+    messagingSenderId: '101704680480',
+    projectId: 'taptobeat-cd62f',
+    authDomain: 'taptobeat-cd62f.firebaseapp.com',
+    storageBucket: 'taptobeat-cd62f.firebasestorage.app',
+    measurementId: 'G-JFE1FY4GSL',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyArXn5vjAAAW0boeLTixU7U6LM-CpZtv0s',
-    appId: '1:185826763880:android:fa5517a05c33d0473ec7dd',
-    messagingSenderId: '185826763880',
-    projectId: 'taptobeat-98b40',
-    storageBucket: 'taptobeat-98b40.firebasestorage.app',
+    apiKey: 'AIzaSyAPmbYb1olF7F0eDh5kjsJuj8WzfzYxX3U',
+    appId: '1:101704680480:android:b9b95f350f84d48b816845',
+    messagingSenderId: '101704680480',
+    projectId: 'taptobeat-cd62f',
+    storageBucket: 'taptobeat-cd62f.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCUw1Vd42dEVGiCKUApkrabyl1SOXZsUJE',
-    appId: '1:185826763880:ios:47847316bbba0ffa3ec7dd',
-    messagingSenderId: '185826763880',
-    projectId: 'taptobeat-98b40',
-    storageBucket: 'taptobeat-98b40.firebasestorage.app',
-    iosClientId: '185826763880-c98nhes30600350oqbntt4dijjd758cs.apps.googleusercontent.com',
+    apiKey: 'AIzaSyBskzzm35iLY_yrt6s9wsVSdS4n0B1R73o',
+    appId: '1:101704680480:ios:490a586d343aec60816845',
+    messagingSenderId: '101704680480',
+    projectId: 'taptobeat-cd62f',
+    storageBucket: 'taptobeat-cd62f.firebasestorage.app',
+    iosClientId: '101704680480-rl0ccr3sumbbehjr1ddkqu3r7arr8ses.apps.googleusercontent.com',
     iosBundleId: 'com.han.TapToBeat',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyCUw1Vd42dEVGiCKUApkrabyl1SOXZsUJE',
-    appId: '1:185826763880:ios:47847316bbba0ffa3ec7dd',
-    messagingSenderId: '185826763880',
-    projectId: 'taptobeat-98b40',
-    storageBucket: 'taptobeat-98b40.firebasestorage.app',
-    iosClientId: '185826763880-c98nhes30600350oqbntt4dijjd758cs.apps.googleusercontent.com',
+    apiKey: 'AIzaSyBskzzm35iLY_yrt6s9wsVSdS4n0B1R73o',
+    appId: '1:101704680480:ios:490a586d343aec60816845',
+    messagingSenderId: '101704680480',
+    projectId: 'taptobeat-cd62f',
+    storageBucket: 'taptobeat-cd62f.firebasestorage.app',
+    iosClientId: '101704680480-rl0ccr3sumbbehjr1ddkqu3r7arr8ses.apps.googleusercontent.com',
     iosBundleId: 'com.han.TapToBeat',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyBldRalyQABO_dAOIM8MwmiDbHBbXJ0Ihs',
-    appId: '1:185826763880:web:4eb2afb66521f6b23ec7dd',
-    messagingSenderId: '185826763880',
-    projectId: 'taptobeat-98b40',
-    authDomain: 'taptobeat-98b40.firebaseapp.com',
-    storageBucket: 'taptobeat-98b40.firebasestorage.app',
-    measurementId: 'G-2WYV2RG24Z',
+    apiKey: 'AIzaSyBpd_Rbi0wzfPuJmRXzRbXBbKdDSN9dZog',
+    appId: '1:101704680480:web:fd13d2e61b035993816845',
+    messagingSenderId: '101704680480',
+    projectId: 'taptobeat-cd62f',
+    authDomain: 'taptobeat-cd62f.firebaseapp.com',
+    storageBucket: 'taptobeat-cd62f.firebasestorage.app',
+    measurementId: 'G-FT7XTJ9S3P',
   );
 }
