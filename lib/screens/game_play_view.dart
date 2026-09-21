@@ -43,6 +43,8 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
   bool _isPaused = false;
   bool _gameEnded = false;
   bool _audioDisposed = false;
+  bool _isInitialized = false; // 📌 중복 실행 방지 플래그
+  bool _isLoadingGame = true;  // 📌 로딩 상태 플래그
 
   int _countPerfect = 0;
   int _countGood = 0;
@@ -52,6 +54,7 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
   String _currentJudge = '';
   Color _judgeColor = Colors.white;
   Timer? _judgeClearTimer;
+  Timer? _gameLoopTimer;
 
   static const List<LogicalKeyboardKey> _keyCodes = [
     LogicalKeyboardKey.keyD,
@@ -108,7 +111,6 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
       ),
     ]).animate(_comboPopController);
 
-    // 📌 게임 도중 설정(볼륨 등) 변경 시 실시간 반영을 위한 리스너 등록
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<SettingsProvider>().addListener(_onSettingsChanged);
@@ -116,7 +118,6 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
     });
   }
 
-  // 📌 설정 변경 시 실시간 반영 콜백
   void _onSettingsChanged() {
     if (!mounted) return;
     final settingsProvider = context.read<SettingsProvider>();
@@ -136,20 +137,47 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_stageData == null) {
-      final args = ModalRoute.of(context)?.settings.arguments;
-      int stageNum = 1;
-      String difficulty = 'NORMAL';
-      if (args is Map) {
-        stageNum = args['stage'] as int? ?? 1;
-        difficulty = StageGenerator.normalizeDifficulty(args['difficulty'] as String?);
-      } else if (args is int) {
-        stageNum = args;
-      }
-      _stageData = StageGenerator.generateStage(stageNum, difficulty: difficulty);
-      _initGameWorld();
-      _startGame();
+    // 📌 중복 실행 방지 및 비동기 파이프라인 진입
+    if (!_isInitialized) {
+      _isInitialized = true;
+      _prepareAndStartGame();
     }
+  }
+
+  /// 📌 오디오 선적재 및 Flame World 생성을 병렬로 처리하여 진입 속도 최적화
+  Future<void> _prepareAndStartGame() async {
+    setState(() => _isLoadingGame = true);
+
+    final args = ModalRoute.of(context)?.settings.arguments;
+    int stageNum = 1;
+    String difficulty = 'NORMAL';
+    if (args is Map) {
+      stageNum = args['stage'] as int? ?? 1;
+      difficulty = StageGenerator.normalizeDifficulty(args['difficulty'] as String?);
+    } else if (args is int) {
+      stageNum = args;
+    }
+    _stageData = StageGenerator.generateStage(stageNum, difficulty: difficulty);
+
+    _initGameWorld();
+
+    final soundPath = _stageData?.audioPath ?? 'sounds/MikoshiMayhem.mp3';
+    final settingsProvider = context.read<SettingsProvider>();
+
+    // 📌 오디오 설정 및 소스 적재
+    try {
+      await _audioPlayer.stop();
+      await _audioPlayer.setVolume(settingsProvider.bgmVolume);
+      await _audioPlayer.setSource(AssetSource(soundPath));
+    } catch (e) {
+      debugPrint('Audio load error: $e');
+    }
+
+    if (!mounted) return;
+
+    setState(() => _isLoadingGame = false);
+
+    _startGame(soundPath);
   }
 
   void _initGameWorld() {
@@ -161,7 +189,7 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
     );
   }
 
-  Future<void> _startGame() async {
+  Future<void> _startGame(String soundPath) async {
     _score = 0;
     _combo = 0;
     _maxCombo = 0;
@@ -175,44 +203,26 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
     _gameEnded = false;
 
     final userProvider = context.read<UserProvider>();
-    final settingsProvider = context.read<SettingsProvider>();
-
     if (mounted) {
-      await userProvider.setLastPlayedStage(_stageData?.stageNumber ?? 1);
+      userProvider.setLastPlayedStage(_stageData?.stageNumber ?? 1);
     }
 
-    final soundPath = _stageData?.audioPath ?? 'sounds/MikoshiMayhem.mp3';
-
-    try {
-      // 광고 재생 후 남은 오디오 포커스/네이티브 상태를 초기화한 뒤 재생을 시작한다.
-      // stop()은 광고로 인해 고착된 네이티브 playing 플래그와 오디오 포커스를 해제한다.
-      await _audioPlayer.stop();
-      await _audioPlayer.setVolume(settingsProvider.bgmVolume);
-
-      // 오디오 버퍼링 지연 및 싱크 어긋남 방지를 위해 소스 선적재 후 재생
-      await _audioPlayer.setSource(AssetSource(soundPath));
-    } catch (e) {
-      debugPrint('Audio load error: $e');
-    }
-
-    // 1초 대기 (시작 연출)
-    await Future.delayed(const Duration(milliseconds: 1000));
     if (!mounted || _isPaused || _gameEnded) return;
 
+    // 📌 딜레이 없이 즉시 재생
     try {
-      // resume() 대신 play()로 시작해 desired state를 확실히 재생 상태로 전환한다.
       await _audioPlayer.play(AssetSource(soundPath));
     } catch (e) {
       debugPrint('Audio playback error: $e');
     }
 
-    // 광고로 인한 무음/포커스 실패 상태 감지 시 자동 복구 (1회 재시도)
     _scheduleAudioWatchdog(soundPath);
 
     _stopwatch.reset();
     _stopwatch.start();
 
-    Timer.periodic(const Duration(milliseconds: 16), (timer) {
+    _gameLoopTimer?.cancel();
+    _gameLoopTimer = Timer.periodic(const Duration(milliseconds: 16), (timer) {
       if (!_isPlaying || _isPaused || _gameEnded) {
         if (_gameEnded) timer.cancel();
         return;
@@ -221,18 +231,13 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
     });
   }
 
-  /// 광고 시청 직후 오디오 포커스 실패 등으로 재생이 시작되지 않았을 때
-  /// 자동으로 stop 후 1회 재시도한다. 실제로 소리가 나고 있는지는 위치 전진으로 판단한다.
   Future<void> _scheduleAudioWatchdog(String soundPath) async {
-    await Future.delayed(const Duration(milliseconds: 700));
+    await Future.delayed(const Duration(milliseconds: 1000));
     if (!mounted || _isPaused || _gameEnded || _audioDisposed) return;
 
     try {
-      if (_audioPlayer.state != PlayerState.playing) return;
-      final position = await _audioPlayer.getCurrentPosition();
-      final progressed = position != null && position.inMilliseconds > 0;
-      if (!progressed) {
-        debugPrint('Audio watchdog: 재생이 감지되지 않아 재시작합니다.');
+      if (_audioPlayer.state != PlayerState.playing) {
+        debugPrint('Audio watchdog: 재생 중이 아니므로 재시작합니다.');
         await _audioPlayer.stop();
         if (!mounted) return;
         await _audioPlayer.setVolume(context.read<SettingsProvider>().bgmVolume);
@@ -414,6 +419,7 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
     if (_gameEnded) return;
     _gameEnded = true;
     _isPlaying = false;
+    _gameLoopTimer?.cancel();
     _stopwatch.stop();
     _audioPlayer.pause();
 
@@ -451,8 +457,7 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
           _resumeGame();
         },
         onRetry: () {
-          _initGameWorld();
-          _startGame();
+          _prepareAndStartGame();
         },
       ),
     );
@@ -472,6 +477,7 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
       context.read<SettingsProvider>().removeListener(_onSettingsChanged);
     } catch (_) {}
 
+    _gameLoopTimer?.cancel();
     _judgeClearTimer?.cancel();
     _stopwatch.stop();
     _judgeAnimController.dispose();
@@ -496,7 +502,26 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
       child: Scaffold(
         backgroundColor: const Color(0xFF111111),
         body: SafeArea(
-          child: KeyboardListener(
+          child: _isLoadingGame
+              ? const Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: Color(0xFFFFD166)),
+                SizedBox(height: 16),
+                Text(
+                  'READY...',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                  ),
+                ),
+              ],
+            ),
+          )
+              : KeyboardListener(
             focusNode: _focusNode,
             autofocus: true,
             onKeyEvent: (event) {
@@ -792,7 +817,7 @@ class _GamePlayViewState extends State<GamePlayView> with WidgetsBindingObserver
     );
   }
 
-Widget _buildKeyGuide() {
+  Widget _buildKeyGuide() {
     return Container(
       height: 76,
       color: Colors.black,
