@@ -1,10 +1,16 @@
 {
   "hosting": {
-    "public": "hosting",
+    "public": "public",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
     ]
   },
   "flutter": {
@@ -21,9 +27,9 @@
           "projectId": "taptobeat-cd62f",
           "configurations": {
             "android": "1:101704680480:android:b9b95f350f84d48b816845",
-            "ios":     "1:101704680480:ios:490a586d343aec60816845",
-            "macos":   "1:101704680480:ios:490a586d343aec60816845",
-            "web":     "1:101704680480:web:950d31c617d4394a816845",
+            "ios": "1:101704680480:ios:490a586d343aec60816845",
+            "macos": "1:101704680480:ios:490a586d343aec60816845",
+            "web": "1:101704680480:web:950d31c617d4394a816845",
             "windows": "1:101704680480:web:fd13d2e61b035993816845"
           }
         }
