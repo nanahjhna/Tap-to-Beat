@@ -7,6 +7,7 @@ class UserProvider extends ChangeNotifier {
 
   int _userId = 1;
   int _coins = 0;
+  int _plays = 0;
   Set<String> _ownedSongs = {};
   Set<String> _ownedEffects = {};
   Set<String> _equippedSongs = {};
@@ -14,6 +15,7 @@ class UserProvider extends ChangeNotifier {
   Map<int, ({int bestScore, String bestRank})> _bestResults = {};
 
   int get coins => _coins;
+  int get plays => _plays;
 
   bool ownsSong(String itemId) {
     if (_ownedSongs.contains(itemId)) return true;
@@ -61,6 +63,7 @@ class UserProvider extends ChangeNotifier {
   Future<void> init() async {
     _userId = await _db.getOrCreateUser();
     _coins = await _db.getCoins(_userId);
+    _plays = await _db.getPlays(_userId);
     await _loadOwnedItems();
     await _loadBestResults();
     notifyListeners();
@@ -98,6 +101,23 @@ class UserProvider extends ChangeNotifier {
     final success = await _db.spendCoins(_userId, amount);
     if (success) {
       _coins = await _db.getCoins(_userId);
+      notifyListeners();
+    }
+    return success;
+  }
+
+  // ── 플레이 재화 ──
+
+  Future<void> addPlays(int amount) async {
+    await _db.addPlays(_userId, amount);
+    _plays = await _db.getPlays(_userId);
+    notifyListeners();
+  }
+
+  Future<bool> spendPlay() async {
+    final success = await _db.spendPlay(_userId);
+    if (success) {
+      _plays = await _db.getPlays(_userId);
       notifyListeners();
     }
     return success;

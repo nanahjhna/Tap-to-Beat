@@ -22,9 +22,17 @@ import 'screens/notice_view.dart';
 import 'screens/credits_view.dart';
 import 'utils/app_texts.dart';
 import 'theme/app_theme.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 🔥 Firebase 초기화 (Google 로그인에 필수)
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   await AppTexts.loadLanguage();
 
   if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {

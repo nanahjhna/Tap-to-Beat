@@ -4,6 +4,7 @@ import '../providers/user_provider.dart';
 import '../models/effect_model.dart';
 import '../models/stage_model.dart';
 import '../services/stage_generator.dart';
+import '../services/play_gate_helper.dart';
 import '../widgets/game_bottom_navigation.dart';
 import '../widgets/game_header.dart';
 import '../utils/app_texts.dart';
@@ -71,7 +72,7 @@ class _InventoryViewState extends State<InventoryView> {
             _InventoryItemData(
               id: itemId,
               name: stage.title,
-              desc: '${stage.artist} • BPM ${stage.bpm} • ${stage.difficulty}',
+              desc: '${stage.artist} • ${stage.difficulty}',
               type: 'song',
               color: AppColors.blue,
               icon: Icons.music_note_rounded,
@@ -89,7 +90,7 @@ class _InventoryViewState extends State<InventoryView> {
             _InventoryItemData(
               id: item.id,
               name: item.name,
-              desc: item.desc,
+              desc: item.localizedDesc,
               type: 'song',
               color: item.color,
               icon: item.icon,
@@ -109,7 +110,7 @@ class _InventoryViewState extends State<InventoryView> {
             _InventoryItemData(
               id: effect.id,
               name: effect.name,
-              desc: effect.desc,
+              desc: effect.localizedDesc,
               type: 'effect',
               color: effect.color,
               icon: effect.icon,
@@ -124,7 +125,7 @@ class _InventoryViewState extends State<InventoryView> {
             _InventoryItemData(
               id: skin.id,
               name: skin.name,
-              desc: skin.desc,
+              desc: skin.localizedDesc,
               type: 'effect',
               color: skin.color,
               icon: skin.icon,
@@ -317,7 +318,7 @@ class _InventoryViewState extends State<InventoryView> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '${capturedStage.bpm} BPM • ${capturedStage.noteCount} NOTES',
+                    '${capturedStage.noteCount} NOTES',
                     style: const TextStyle(
                       color: Colors.white60,
                       fontSize: 12,
@@ -374,14 +375,13 @@ class _InventoryViewState extends State<InventoryView> {
           if (capturedStage != null)
             ElevatedButton(
               onPressed: () {
+                final selStage = capturedStage.stageNumber;
+                final selDiff = capturedStage.difficulty;
                 Navigator.pop(ctx);
-                Navigator.pushNamed(
+                tryStartGame(
                   context,
-                  '/gamePlay',
-                  arguments: {
-                    'stage': capturedStage.stageNumber,
-                    'difficulty': capturedStage.difficulty,
-                  },
+                  stage: selStage,
+                  difficulty: selDiff,
                 );
               },
               style: appAccentButtonStyle,

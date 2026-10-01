@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "101704680480",
+    "project_id": "taptobeat-cd62f",
+    "storage_bucket": "taptobeat-cd62f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:101704680480:android:b9b95f350f84d48b816845",
+        "android_client_info": {
+          "package_name": "com.han.TapToBeat"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "101704680480-4kqp3tjmjqt8kcvcf0vmv35c7hvrq5sh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.han.TapToBeat",
+            "certificate_hash": "91d193661a3df6cc67a9574afd066f61585aa4df"
+          }
+        },
+        {
+          "client_id": "101704680480-stqj0k4u5ive5amfltoqiqvc0e0itr2c.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAPmbYb1olF7F0eDh5kjsJuj8WzfzYxX3U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "101704680480-stqj0k4u5ive5amfltoqiqvc0e0itr2c.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "101704680480-rl0ccr3sumbbehjr1ddkqu3r7arr8ses.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.han.TapToBeat"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

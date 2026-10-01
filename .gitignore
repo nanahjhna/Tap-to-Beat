@@ -44,4 +44,9 @@ app.*.map.json
 /android/.gradle/
 /android/local.properties
 /android/captures/
-.gradle/
+.gradle/ 
+# App Signing Security 
+*.jks 
+*.keystore 
+key.properties 
+upload_certificate.pem 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../services/stage_generator.dart';
+import '../services/play_gate_helper.dart';
 import '../theme/app_theme.dart';
 import '../utils/app_texts.dart';
 
@@ -317,10 +318,11 @@ Container(
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () => Navigator.pushReplacementNamed(
+                  onPressed: () => tryStartGame(
                     context,
-                    '/gamePlay',
-                    arguments: {'stage': stage, 'difficulty': difficulty},
+                    stage: stage,
+                    difficulty: difficulty,
+                    useReplacement: true,
                   ),
                   icon: const Icon(Icons.replay_rounded),
                   label: Text(AppTexts.get('retry')),

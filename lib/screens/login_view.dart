@@ -1,20 +1,53 @@
 import 'package:flutter/material.dart';
+import '../services/google_auth_service.dart';
 import '../services/user_session.dart';
 import '../utils/app_texts.dart';
 
-class LoginView extends StatelessWidget {
+class LoginView extends StatefulWidget {
   const LoginView({super.key});
 
-  Future<void> _handleLogin(
-    BuildContext context,
-    String provider,
-    String label,
-  ) async {
-    await UserSession.saveLoginProvider(provider);
-    if (!context.mounted) return;
+  @override
+  State<LoginView> createState() => _LoginViewState();
+}
+
+class _LoginViewState extends State<LoginView> {
+  bool _isSigningIn = false;
+
+  Future<void> _handleGuestLogin() async {
+    await UserSession.saveLoginProvider('guest');
+    if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/main');
+    _showSnackBar('${AppTexts.get('guest')} - ${AppTexts.get('loginSuccess')}');
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    setState(() => _isSigningIn = true);
+    final result = await GoogleAuthService.instance.signIn();
+    if (!mounted) return;
+    setState(() => _isSigningIn = false);
+
+    if (result.errorMessage != null) {
+      _showSnackBar(
+        result.errorMessage == 'cancelled'
+            ? AppTexts.get('googleSignInCancelled')
+            : AppTexts.get('googleSignInFailed'),
+      );
+      return;
+    }
+
+    await UserSession.saveLoginProvider('google');
+    await UserSession.saveGoogleAccount(
+      email: result.email,
+      displayName: result.displayName,
+    );
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, '/main');
+    _showSnackBar('${AppTexts.get('googleLogin')} - ${AppTexts.get('loginSuccess')}');
+  }
+
+  void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$label - ${AppTexts.get('loginSuccess')}')),
+      SnackBar(content: Text(message)),
     );
   }
 
@@ -68,8 +101,7 @@ class LoginView extends StatelessWidget {
             ),
             const Spacer(flex: 2),
             ElevatedButton.icon(
-              onPressed: () =>
-                  _handleLogin(context, 'guest', AppTexts.get('guest')),
+              onPressed: _isSigningIn ? null : _handleGuestLogin,
               icon: const Icon(Icons.person_outline),
               label: Text(
                 AppTexts.get('guest'),
@@ -82,16 +114,21 @@ class LoginView extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
-              onPressed: () =>
-                  _handleLogin(context, 'google', AppTexts.get('googleLogin')),
-              icon: const Icon(Icons.g_mobiledata),
+              onPressed: _isSigningIn ? null : _handleGoogleLogin,
+              icon: _isSigningIn
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.g_mobiledata),
               label: Text(
-                AppTexts.get('googleLogin'),
+                _isSigningIn ? AppTexts.get('checking') : AppTexts.get('googleLogin'),
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.white,
-                side: const BorderSide(color: Colors.white24),
+                side: const BorderSide(color: Colors.white38),
               ),
             ),
             const Spacer(),
