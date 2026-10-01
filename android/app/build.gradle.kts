@@ -19,8 +19,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.han.TapToBeat"
-    
-    // compileSdk를 flutter 기본값과 동기화하거나 targetSdk와 일치시킵니다.
+
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -32,28 +31,39 @@ android {
     defaultConfig {
         applicationId = "com.han.TapToBeat"
         minSdk = flutter.minSdkVersion
-        // targetSdk를 임의로 고정하는 대신 플러터 기본값을 사용하거나 
-        // 꼭 필요하다면 compileSdk와 동일하게 맞추는 것이 안전합니다.
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
-    // Release 서명 설정 (key.properties가 없을 경우 대비 안전장치 추가)
+    // Release 서명 설정 (안전한 폴백 처리)
     signingConfigs {
         create("release") {
             val hasKeyProps = keystoreProperties.isNotEmpty()
-            keyAlias = if (hasKeyProps) keystoreProperties["keyAlias"] as String else ""
-            keyPassword = if (hasKeyProps) keystoreProperties["keyPassword"] as String else ""
-            storeFile = if (hasKeyProps && keystoreProperties["storeFile"] != null) file(keystoreProperties["storeFile"] as String) else null
-            storePassword = if (hasKeyProps) keystoreProperties["storePassword"] as String else ""
+            if (hasKeyProps) {
+                keyAlias = keystoreProperties.getProperty("keyAlias") ?: ""
+                keyPassword = keystoreProperties.getProperty("keyPassword") ?: ""
+                storePassword = keystoreProperties.getProperty("storePassword") ?: ""
+
+                val storePath = keystoreProperties.getProperty("storeFile")
+                if (!storePath.isNullOrBlank()) {
+                    val keyFile = file(storePath)
+                    storeFile = if (keyFile.isAbsolute) keyFile else rootProject.file(storePath)
+                }
+            }
         }
     }
 
     buildTypes {
         release {
-            // 릴리스 빌드시에만 서명 적용 (디버그 모드 실행 시 충돌 방지)
-            signingConfig = signingConfigs.getByName("release")
+            // key.properties가 존재할 때만 release 서명을 적용하고, 없으면 debug 서명으로 안전하게 폴백
+            val hasKeyProps = keystoreProperties.isNotEmpty()
+            signingConfig = if (hasKeyProps) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
+
             isMinifyEnabled = false
             isShrinkResources = false
         }
@@ -62,7 +72,7 @@ android {
 
 kotlin {
     compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 
