@@ -8,7 +8,7 @@
     ],
     "rewrites": [
       {
-        "source": "**",
+        "source": "!/app-ads.txt",
         "destination": "/index.html"
       }
     ]
